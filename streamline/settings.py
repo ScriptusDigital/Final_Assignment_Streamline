@@ -73,7 +73,7 @@ WSGI_APPLICATION = 'streamline.wsgi.application'
 
 DATABASES = {
     'default': dj_database_url.parse(
-    os.getenv['DATABASE_URL'],
+    os.environ['DATABASE_URL'],
      conn_max_age=600,
     )
 }
