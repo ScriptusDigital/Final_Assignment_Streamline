@@ -2,7 +2,8 @@ from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from .models import User
 
-class RegisterSerializer(serializers.ModelSerializer):
+
+class RegistrationSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(
         max_length=150,
         allow_blank=False,
@@ -38,11 +39,24 @@ class RegisterSerializer(serializers.ModelSerializer):
 
         return email
 
-    def create(self, validated_data):
-        user = User.objects.create(
-            username=validated_data['username'],
-            email=validated_data['email']
+    def create(self, attrs):
+        candidate = User(
+            email=attrs.get('email',""),
+            first_name=attrs.get('first_name',""),
+            last_name=attrs.get('last_name',""),
         )
-        user.set_password(validated_data['password'])
-        user.save()
-        return user
+
+        validate_password(
+            attrs["password"],
+            user=candidate
+        )
+
+        return attrs
+
+    def create(self, validated_data):
+        password = validated_data.pop('password')
+
+        return User.objects.create_user(
+            password=password,
+            **validated_data,    
+        )
