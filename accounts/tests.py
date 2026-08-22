@@ -149,6 +149,11 @@ class RegistrationViewTests(APITestCase):
        self.assertEqual(user.role, User.Role.VIEWER)
        self.assertTrue(user.check_password(self.password))
 
+       self.assertEqual(
+           self.client.session.get(SESSION_KEY),
+           str(user.pk)
+       )
+
     def test_invalid_registration_returns_400(self):
         User = get_user_model()
 
@@ -267,19 +272,21 @@ class CurrentUserViewtests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 """ Session endpoint tests to verify session management and authentication behavior. """
-class SessionEndpointTests(APITestCase):
-  password = "Strong-Password_123"
+# tests for csrf and logout session behaviour
 
-  def setUp(self):
-    User = get_user_model()
-    self.user = User.objects.create_user(
-        email="session@example.com",
-        password=self.password
+class SessionEndpointTests(APITestCase):
+    password = "Strong-Password_123"
+
+    def setUp(self):
+        User = get_user_model()
+        self.user = User.objects.create_user(
+            email="session@example.com",
+            password=self.password
     )
 
-    self.csrf_url = reverse('accounts:csrf')
-    sekf.login_url = reverse('accounts:login')
-    self.logout_url = reverse('accounts:logout')
+        self.csrf_url = reverse('accounts:csrf')
+        self.login_url = reverse('accounts:login')
+        self.logout_url = reverse('accounts:logout')
 
     def test_csrf_endpoints_sets_cookie(self):
         response = self.client.get(self.csrf_url)
