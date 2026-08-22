@@ -13,7 +13,7 @@ class RegisterView(APIView):
 
     def post(self, request):
         serializer = RegistrationSerializer(
-            datra=request.data,
+            data=request.data,
         )
 
         if serializer.is_valid():

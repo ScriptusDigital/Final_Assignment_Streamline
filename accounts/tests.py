@@ -136,3 +136,31 @@ class RegistrationViewTests(APITestCase):
        )
 
        self.assertNotIn('password', response.data)
+
+       user = User.objects.get(
+           email="new.api.user@example.com"
+       )
+
+       self.assertEqual(user.role, User.Role.VIEWER)
+       self.assertTrue(user.check_password(self.password))
+
+    def test_invalid_registration_returns_400(self):
+        User = get_user_model()
+
+        response = self.client.post(
+            self.url,
+            {
+                "email": "incomplete@example.com",
+                "password": self.password,
+            },
+            format='json'
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST
+        )
+
+        self.assertIn("first_name", response.data)
+        self.assertIn("last_name", response.data)
+        self.assertEqual(User.objects.count(), 0)
