@@ -3,7 +3,11 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.authentication import SessionAuthentication
-from django.contrib.auth import login as django_login
+from django.contrib.auth import login as django_login, logout as django_logout
+
+from django.middleware.csrf import get_token
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie, csrf_protect
 
 
 from .serializers import LoginSerializer, LoginSerializer, RegistrationSerializer, UserSerializer, UserSerializer
