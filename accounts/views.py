@@ -1,7 +1,8 @@
 from rest_framework import status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.authentication import SessionAuthentication
 from django.contrib.auth import login as django_login
 
 
@@ -33,7 +34,7 @@ class RegisterView(APIView):
 """ Login view for user authentication. """
 class LoginView(APIView):
     """Authenticate a user and return an authentication token."""
-    authentication_classes = []
+    authentication_classes = [SessionAuthentication]
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -50,7 +51,15 @@ class LoginView(APIView):
                 status=status.HTTP_200_OK,
             )
 
-        return Response(
-            serializer.errors,
-            status=status.HTTP_400_BAD_REQUEST,
+     
+
+class CurrentUserView(APIView):
+    """Retrieve the currently authenticated user."""
+    authentication_classes = [SessionAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+       return Response(
+            UserSerializer(request.user).data,
+            status=status.HTTP_200_OK,
         )
