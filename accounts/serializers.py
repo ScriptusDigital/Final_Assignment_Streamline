@@ -1,7 +1,9 @@
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from .models import User
+from django.contrib.auth import authenticate
 
+# Serializer for the User model
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -9,9 +11,7 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ('id', 'email', 'first_name', 'last_name', 'role')
         read_only_fields = fields
 
-
-
-
+#Registration serializer for creating new users
 
 class RegistrationSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(
@@ -34,6 +34,8 @@ class RegistrationSerializer(serializers.ModelSerializer):
         choices=User.Role.choices,
         read_only=True,
     )
+
+# Meta class for the RegistrationSerializer
 
     class Meta:
         model = User
@@ -70,3 +72,31 @@ class RegistrationSerializer(serializers.ModelSerializer):
             password=password,
             **validated_data,    
         )
+
+# Login serializer for authenticating users
+
+class LoginSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(
+        write_only=True,
+        trim_whitespace=False,
+        style={'input_type': 'password'},
+    )
+
+    def validate(self, attrs):
+        email = attrs['email'].strip().lower()
+        password = attrs['password']
+
+        user = authenticate(
+            request=self.context.get('request'),
+            username=email,
+            password=password,
+   )
+        if user is None:
+            raise serializers.ValidationError(
+                "Cannot log in with provided credentials.",
+            )
+
+        attrs['email'] = email
+        attrs['user'] = user
+        return attrs
