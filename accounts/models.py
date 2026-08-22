@@ -33,7 +33,7 @@ class UserManager(BaseUserManager):
 
         return self.create_user(email, password, **extra_fields)
 
-    class User(AbstractUser):
+class User(AbstractUser):
         class Role(models.TextChoices):
             VIEWER = "viewer", "Viewer"
             EDITOR = "editor", "Editor"
