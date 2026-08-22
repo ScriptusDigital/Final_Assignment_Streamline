@@ -4,8 +4,8 @@ from .serializers import LoginSerializer, RegistrationSerializer
 
 from django.urls import reverse
 from rest_framework import status
-from rest_framework.test import APITestCase
-
+from rest_framework.test import APIClient, APITestCase
+from django.conf import settings
 
 # Test cases for the User model and related serializers and views.
 
@@ -265,3 +265,58 @@ class CurrentUserViewtests(APITestCase):
     def test_unauthenticated_user_cannot_retrieve_current_user(self):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+""" Session endpoint tests to verify session management and authentication behavior. """
+class SessionEndpointTests(APITestCase):
+  password = "Strong-Password_123"
+
+  def setUp(self):
+    User = get_user_model()
+    self.user = User.objects.create_user(
+        email="session@example.com",
+        password=self.password
+    )
+
+    self.csrf_url = reverse('accounts:csrf')
+    sekf.login_url = reverse('accounts:login')
+    self.logout_url = reverse('accounts:logout')
+
+    def test_csrf_endpoints_sets_cookie(self):
+        response = self.client.get(self.csrf_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn(settings.CSRF_COOKIE_NAME, response.cookies)
+
+    def test_authenticated_user_can_logout(self):
+        self.client.force_login(self.user)
+        response = self.client.post(self.logout_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertNotIn(SESSION_KEY, self.client.session)
+        self.assertEqual(response.data['detail'], "Successfully logged out.")
+
+    def test_unauthenticated_user_cannot_logout(self):
+        response = self.client.post(self.logout_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_login_requires_csrf_token_when_checks_enabled(self):
+            # Retrieve CSRF token
+            client = APIClient(enforce_csrf_checks=True)
+
+            login_data = {
+                "email": self.user.email,
+                "password": self.password,
+            }
+
+            rejected_response = client.post(self.login_url, login_data, format='json')
+            self.assertEqual(rejected_response.status_code, status.HTTP_403_FORBIDDEN)
+
+            csrf_response = client.get(self.csrf_url)
+            csrf_token = csrf_response.cookies[settings.CSRF_COOKIE_NAME].value
+
+            accepted_response = client.post(
+                self.login_url,
+                login_data,
+                format='json',
+                HTTP_X_CSRFTOKEN=csrf_token
+            )
+
+            self.assertEqual(accepted_response.status_code, status.HTTP_200_OK)

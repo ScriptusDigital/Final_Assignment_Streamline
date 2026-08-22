@@ -50,7 +50,10 @@ class RegisterView(APIView):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-""" Login view for user authentication. """
+""" login view and csrf protect """
+@method_decorator(csrf_protect, name='dispatch')
+
+
 class LoginView(APIView):
     """Authenticate a user and return an authentication token."""
     authentication_classes = [SessionAuthentication]
@@ -82,3 +85,18 @@ class CurrentUserView(APIView):
             UserSerializer(request.user).data,
             status=status.HTTP_200_OK,
         )
+
+
+class LogoutView(APIView):
+    authentication_classes = [SessionAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        django_logout(request)
+
+        return Response(
+            {"detail": "Logged out."},
+            status=status.HTTP_200_OK
+        )
+
+
