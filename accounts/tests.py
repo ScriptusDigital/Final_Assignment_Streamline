@@ -5,16 +5,16 @@ class UserManagerTests(TestCase):
     def test_create_user(self):
         User = get_user_model()
         user = User.objects.create_user(
-            email='test@example.com',
+            email='viewer@example.com',
             password='testpassword'
         )
         self.assertEqual(user.email, 'viewer@example.com')
         self.assertEqual(user.role, User.Role.VIEWER)
         self.assertTrue(user.check_password('testpassword'))
-        self.assertFalse(user.is_staff),
+        self.assertFalse(user.is_staff)
         self.assertFalse(user.is_superuser)
 
-    def test_create_use_requires_email(self):
+    def test_create_user_requires_email(self):
         User = get_user_model()
 
         with self.assertRaises(ValueError):
@@ -27,7 +27,7 @@ class UserManagerTests(TestCase):
             User = get_user_model()
     
 
-            User.objects.create_superuser(
+            user =User.objects.create_superuser(
                     email="admin@example.com",
                     password="testpassword",
                 )
