@@ -2,6 +2,10 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from .serializers import RegistrationSerializer
 
+from django.urls import reverse
+from rest_framework import status
+from rest_framework.test import APITestCase
+
 class UserManagerTests(TestCase):
     def test_create_user(self):
         User = get_user_model()
@@ -93,3 +97,24 @@ class RegistrationSerializerTests(TestCase):
         self.assertFalse(serializer.is_valid())
         self.assertIn("first_name", serializer.errors)
         self.assertIn("last_name", serializer.errors)
+
+class RegistrationViewTests(APITestCase):
+    def setUp(self):
+        self.url = reverse('accounts:register')
+        self.password = "Strong-Password_123"
+
+    def test_register_creates_viewer_and_hides_password(self):
+       User = get_user_model()
+
+       response = self.client.post(
+           self.url,
+           {
+               
+               "email": "New.Api.User@Example.com",
+                "password": self.password,
+                "first_name": "New",
+                "last_name": "User", 
+                "role": User.Role.ADMIN,
+           },
+           format='json'
+       )
