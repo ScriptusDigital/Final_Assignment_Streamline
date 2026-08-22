@@ -1,10 +1,12 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
-from .serializers import RegistrationSerializer
+from .serializers import LoginSerializer, RegistrationSerializer
 
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
+
+# Test cases for the User model and related serializers and views.
 
 class UserManagerTests(TestCase):
     def test_create_user(self):
@@ -43,6 +45,7 @@ class UserManagerTests(TestCase):
             self.assertTrue(user.check_password("Strong-Password_123"))
 
 
+# Test cases for the RegistrationSerializer and RegisterView.
 class RegistrationSerializerTests(TestCase):
     password = "Strong-Password_123"
 
@@ -98,6 +101,7 @@ class RegistrationSerializerTests(TestCase):
         self.assertIn("first_name", serializer.errors)
         self.assertIn("last_name", serializer.errors)
 
+# Test cases for the RegisterView API endpoint.
 class RegistrationViewTests(APITestCase):
     def setUp(self):
         self.url = reverse('accounts:register')
@@ -164,3 +168,27 @@ class RegistrationViewTests(APITestCase):
         self.assertIn("first_name", response.data)
         self.assertIn("last_name", response.data)
         self.assertEqual(User.objects.count(), 0)
+
+
+class LoginSerializerTests(TestCase):
+   password = "Strong-Password_123"
+
+   def setUp(self):
+       User = get_user_model()
+       self.user = User.objects.create_user(
+           email="member@example.com",
+           password=self.password
+           }
+       )
+
+    def test_valid_credentials_returns_user(self):
+        serializer = LoginSerializer(data={
+            "email": "member@example.com",
+            "password": self.password
+        })
+        self.assertTrue(serializer.is_valid(),
+        serializer.errors,
+        )
+
+        
+        self.assertEqual(serializer.validated_data['user'], self.user)
