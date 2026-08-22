@@ -31,4 +31,11 @@ class UserManagerTests(TestCase):
                     email="admin@example.com",
                     password="testpassword",
                 )
-                
+
+            self.assertEqual(user.role, User.Role.ADMIN)
+            self.assertTrue(user.is_staff)
+            self.assertTrue(user.is_superuser)
+            self.assertTrue(user.check_password("testpassword"))
+
+
+        
