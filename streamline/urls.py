@@ -1,12 +1,7 @@
-
 from django.contrib import admin
-from django.urls import path
-from .views import RegisterView
-
-app_name = 'accounts'
+from django.urls import include, path
 
 urlpatterns = [
-    path("auth/register/",
-         RegisterView.as_view(),
-         name="register"),
+    path("admin/", admin.site.urls),
+    path("api/", include("accounts.urls")),
 ]
