@@ -27,19 +27,19 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'password', 'first_name', 'last_name', 'role')
+        fields = ('id', 'email', 'password', 'first_name', 'last_name', 'role')
 
         read_only_fields = ('id', 'role',)
 
-    def validate(self, value):
+    def validate_email(self, value):
         email = User.objects.normalize_email(value).strip().lower()
 
         if User.objects.filter(email__iexact=email).exists():
-            raise serializers.ValidationError({"email": "Email is already in use."})
+            raise serializers.ValidationError("Email is already in use.")
 
         return email
 
-    def create(self, attrs):
+    def validate(self, attrs):
         candidate = User(
             email=attrs.get('email',""),
             first_name=attrs.get('first_name',""),

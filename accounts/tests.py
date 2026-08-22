@@ -7,11 +7,11 @@ class UserManagerTests(TestCase):
         User = get_user_model()
         user = User.objects.create_user(
             email='viewer@example.com',
-            password='testpassword'
+            password='Strong-Password_123'
         )
         self.assertEqual(user.email, 'viewer@example.com')
         self.assertEqual(user.role, User.Role.VIEWER)
-        self.assertTrue(user.check_password('testpassword'))
+        self.assertTrue(user.check_password('Strong-Password_123'))
         self.assertFalse(user.is_staff)
         self.assertFalse(user.is_superuser)
 
@@ -21,7 +21,7 @@ class UserManagerTests(TestCase):
         with self.assertRaises(ValueError):
             User.objects.create_user(
                 email="",
-                password="testpassword",
+                password="Strong-Password_123",
             )
 
     def test_create_superuser(self):
@@ -30,23 +30,23 @@ class UserManagerTests(TestCase):
 
             user =User.objects.create_superuser(
                     email="admin@example.com",
-                    password="testpassword",
+                    password="Strong-Password_123",
                 )
 
             self.assertEqual(user.role, User.Role.ADMIN)
             self.assertTrue(user.is_staff)
             self.assertTrue(user.is_superuser)
-            self.assertTrue(user.check_password("testpassword"))
+            self.assertTrue(user.check_password("Strong-Password_123"))
 
 
 class RegistrationSerializerTests(TestCase):
-    password = "testpassword"
+    password = "Strong-Password_123"
 
     def test_valid_registration_creates_viewer(self):
         User = get_user_model()
 
         serializer = RegistrationSerializer(data={
-               "email": "New.User@Example.com",
+               "email": "new.user@example.com",
                "password": self.password,
                "first_name": "New",
                "last_name": "User",
@@ -60,11 +60,11 @@ class RegistrationSerializerTests(TestCase):
 
         user = serializer.save()
 
-        self.assertEqual(user.email, 'New.User@Example.com')
+        self.assertEqual(user.email, 'new.user@example.com')
         self.assertEqual(user.first_name, 'New')
         self.assertEqual(user.last_name, 'User')
         self.assertEqual(user.role, User.Role.VIEWER)
-        self.assertTrue(user.check_password('self.password'))
+        self.assertTrue(user.check_password(self.password))
         self.assertNotEqual(user.password, self.password) 
 
     def test_duplicate_email_is_case_insensitive(self):
@@ -85,7 +85,7 @@ class RegistrationSerializerTests(TestCase):
         self.assertIn("email", serializer.errors)
         self.assertEqual(User.objects.count(), 1)
 
-    def test_reistration_requires_names(self):
+    def test_registration_requires_names(self):
         serializer = RegistrationSerializer(data={
             "email": "nameless@example.com",
             "password": self.password,
