@@ -1,10 +1,11 @@
-from django.contrib.auth import get_user_model
+from django.contrib.auth import SESSION_KEY, get_user_model
 from django.test import TestCase
 from .serializers import LoginSerializer, RegistrationSerializer
 
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
+
 
 # Test cases for the User model and related serializers and views.
 
@@ -199,3 +200,43 @@ class LoginSerializerTests(TestCase):
         })
         self.assertFalse(serializer.is_valid())
         self.assertIn("non_field_errors", serializer.errors)
+
+# Test cases for the LoginView API endpoint.
+class LoginViewTests(APITestCase):
+    password = "Strong-Password_123"
+
+    def setUp(self):
+        self.url = reverse('accounts:login')
+        User = get_user_model()
+        self.user = User.objects.create_user(
+            email="member@example.com",
+            password=self.password
+        )
+
+    def test_valid_login_creates_session(self):
+        response = self.client.post(
+            self.url,
+            {
+                "email": "member@example.com",
+                "password": self.password
+            },
+
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
+        self.assertEqual(response.data['email'], "member@example.com")
+        self.assertNotIn('password', response.data)
+        self.assertEqual(self.client.session.get(SESSION_KEY), str(self.user.pk))
+
+
+    def test_invalid_login_returns_400(self):
+        response = self.client.post(
+            self.url,
+            {
+                "email": "member@example.com",
+                "password": "wrongpassword"
+            },
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, response.data)
+        self.assertNotIn(SESSION_KEY, self.client.session)
