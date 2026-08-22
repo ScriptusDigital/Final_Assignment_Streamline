@@ -240,3 +240,28 @@ class LoginViewTests(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, response.data)
         self.assertNotIn(SESSION_KEY, self.client.session)
+
+# Test cases for the CurrentUserView API endpoint.
+class CurrentUserViewtests(APITestCase):
+   
+    def setUp(self):
+        User = get_user_model()
+        self.user = User.objects.create_user(
+            email="current@example.com",
+            password="Strong-Password_123"
+        )
+        self.url = reverse('accounts:me')
+
+    def test_authenticated_user_can_retrieve_current_user(self):
+        self.client.force_login(self.user)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['email'], self.user.email,)
+
+        self.assertEqual(response.data['role'], self.user.role,)
+
+        self.assertNotIn('password', response.data)
+
+    def test_unauthenticated_user_cannot_retrieve_current_user(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
