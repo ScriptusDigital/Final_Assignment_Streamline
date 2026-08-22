@@ -298,7 +298,7 @@ class SessionEndpointTests(APITestCase):
         response = self.client.post(self.logout_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertNotIn(SESSION_KEY, self.client.session)
-        self.assertEqual(response.data['detail'], "Successfully logged out.")
+        self.assertEqual(response.data['detail'], "Logged out.")
 
     def test_unauthenticated_user_cannot_logout(self):
         response = self.client.post(self.logout_url)
