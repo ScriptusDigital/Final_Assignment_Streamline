@@ -118,3 +118,21 @@ class RegistrationViewTests(APITestCase):
            },
            format='json'
        )
+
+       self.assertEqual(
+           response.status_code, 
+           status.HTTP_201_CREATED,
+           response.data,
+       )
+
+       self.assertEqual(
+           response.data['email'], 
+           "new.api.user@example.com",
+       )
+
+       self.assertEqual(
+           response.data['role'],
+            User.Role.VIEWER,
+       )
+
+       self.assertNotIn('password', response.data)
