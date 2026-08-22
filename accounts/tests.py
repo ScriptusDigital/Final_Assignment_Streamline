@@ -171,14 +171,13 @@ class RegistrationViewTests(APITestCase):
 
 
 class LoginSerializerTests(TestCase):
-   password = "Strong-Password_123"
+    password = "Strong-Password_123"
 
-   def setUp(self):
+    def setUp(self):
        User = get_user_model()
        self.user = User.objects.create_user(
            email="member@example.com",
-           password=self.password
-           }
+           password=self.password,
        )
 
     def test_valid_credentials_returns_user(self):
@@ -192,3 +191,11 @@ class LoginSerializerTests(TestCase):
 
         
         self.assertEqual(serializer.validated_data['user'], self.user)
+
+    def test_invalid_credentials_returns_error(self):
+        serializer = LoginSerializer(data={
+            "email": "member@example.com",
+            "password": "wrongpassword"
+        })
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("non_field_errors", serializer.errors)
