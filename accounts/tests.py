@@ -13,3 +13,22 @@ class UserManagerTests(TestCase):
         self.assertTrue(user.check_password('testpassword'))
         self.assertFalse(user.is_staff),
         self.assertFalse(user.is_superuser)
+
+    def test_create_use_requires_email(self):
+        User = get_user_model()
+
+        with self.assertRaises(ValueError):
+            User.objects.create_user(
+                email="",
+                password="testpassword",
+            )
+
+    def test_create_superuser(self):
+            User = get_user_model()
+    
+
+            User.objects.create_superuser(
+                    email="admin@example.com",
+                    password="testpassword",
+                )
+                
