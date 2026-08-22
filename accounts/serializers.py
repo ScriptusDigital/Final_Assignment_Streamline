@@ -3,17 +3,40 @@ from rest_framework import serializers
 from .models import User
 
 class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
-    password2 = serializers.CharField(write_only=True, required=True)
+    first_name = serializers.CharField(
+        max_length=150,
+        allow_blank=False,
+        )
+
+    last_name = serializers.CharField(
+        max_length=150,
+        allow_blank=False,
+        )
+
+    password = serializers.CharField(
+        write_only=True,
+        trim_whitespace=False,
+        style={'input_type': 'password'},
+    )
+
+    role = serializers.ChoiceField(
+        choices=User.Role.choices,
+        read_only=True,
+    )
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'password', 'password2')
+        fields = ('username', 'email', 'password', 'first_name', 'last_name', 'role')
 
-    def validate(self, attrs):
-        if attrs['password'] != attrs['password2']:
-            raise serializers.ValidationError({"password": "Password fields didn't match."})
-        return attrs
+        read_only_fields = ('id', 'role',)
+
+    def validate(self, value):
+        email = User.objects.normalize_email(value).strip().lower()
+
+        if User.objects.filter(email__iexact=email).exists():
+            raise serializers.ValidationError({"email": "Email is already in use."})
+
+        return email
 
     def create(self, validated_data):
         user = User.objects.create(
