@@ -266,3 +266,45 @@ class AssetEvent(models.Model):
             "downloaded",
             "Download link requested",
         )
+
+    asset = models.ForeignKey(
+        Asset, on_delete=models.CASCADE, related_name="events",
+    )
+
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="asset_events",
+    )
+
+    action = models.CharField(max_length=30, choices=Action.choices)
+
+    from_status = models.CharField(
+        max_length=24, choices=Asset.Status.choices, blank=True,
+    )
+
+    to_status = models.CharField(
+        max_length=24, choices=Asset.Status.choices, blank=True,
+    )
+
+    metadata = models.JSONField(default=dict, blank=True,)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("-created_at",)
+        indexes = [
+            models.Index(fields=("asset", "action", "-created_at"),name="asset_event_asset_idx",
+            ),
+
+            models.Index(fields=("actor", "action", "-created_at"),name="asset_event_actor_idx",
+            ),
+        ]
+
+        def __str__(self):
+            return (
+                f"{self.asset}: "
+                f"{self.get_action_display()}"
+        )
