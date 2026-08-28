@@ -39,16 +39,16 @@ class NamedSlugModel(models.Model):
             self.slug = candidate
         super().save(*args, **kwargs)
 
-        def __str__(self):
+    def __str__(self):
             return self.name
 
-        class Tag(NamedSlugModel):
+class Tag(NamedSlugModel):
             """Model for tags associated with images."""
 
-        class Collection(NamedSlugModel):
+class Collection(NamedSlugModel):
             """Model for collections of images."""
 
-            description = models.TextField(blank=True, null=True)   
+            description = models.TextField(blank=True)   
 
             created_by = models.ForeignKey(
                 settings.AUTH_USER_MODEL,
