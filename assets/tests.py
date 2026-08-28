@@ -11,7 +11,8 @@ from .models import Asset, AssetEvent, Collection, Tag
 from django.db.models import Count
 from .serializers import AssetEventSerializer, AssetSerializer, CollectionSerializer, TagSerializer
 from rest_framework.test import APIRequestFactory
-
+from django.contrib.auth.models import AnonymousUser
+from .services import workflow_service  
 
 def cloudinary_response(number=1):
     """Dummy provider data without contacting Cloudinary."""
@@ -371,4 +372,29 @@ class AssetSerializerTests(AssetFactoryMixin, TestCase):
         self.assertCountEqual(
             event.metadata["changed_fields"],
             ["caption", "tags", "collections"],
+        )
+        
+class WorkflowAccessTests(AssetFactoryMixin, TestCase):
+    def setUp(self):
+        User = get_user_model()
+
+        self.viewer = User.objects.create_user(
+            email="access.viewer@example.com",
+            password="test-password",
+            role=User.Role.VIEWER,
+        )
+        self.editor = User.objects.create_user(
+            email="access.editor@example.com",
+            password="test-password",
+            role=User.Role.EDITOR,
+        )
+        self.other_editor = User.objects.create_user(
+            email="access.other@example.com",
+            password="test-password",
+            role=User.Role.EDITOR,
+        )
+        self.admin = User.objects.create_user(
+            email="access.admin@example.com",
+            password="test-password",
+            role=User.Role.ADMIN,
         )
