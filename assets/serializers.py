@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from .models import Tag
 from django.contrib.auth import get_user_model
-from rest_framework import serializers
 from.models import Asset, Collection, Tag, AssetEvent
 
 
@@ -56,8 +55,67 @@ class AssetSerializer(serializers.ModelSerializer):
     """ JSON representation of an Asset, including the creator, collection, and tags. """
     
     tags = TagSerializer(many=True, read_only=True)
-    collection = CollectionSerializer(read_only=True, many=True)
+    collections = CollectionSerializer(read_only=True, many=True)
     uploader = UserSummarySerializer(read_only=True)
     approver = UserSummarySerializer(read_only=True)
     is_expired = serializers.BooleanField(read_only=True)
     is_viewer_accessible = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        model = Asset
+        fields = (
+            "id",
+            "title",
+            "caption",
+            "alt_text",
+            "photographer_credit",
+            "event_name",
+            "location",
+            "captured_at",
+            "notes",
+            "tags",
+            "collections",
+            "rights_status",
+            "permitted_use",
+            "licence_details",
+            "expiry_date",
+            "status",
+            "uploader",
+            "approver",
+            "approved_at",
+            "archived_at",
+            "cloudinary_asset_id",
+            "public_id",
+            "delivery_type",
+            "secure_url",
+            "original_filename",
+            "image_format",
+            "width",
+            "height",
+            "bytes",
+            "version",
+            "created_at",
+            "updated_at",
+            "is_expired",
+            "is_viewer_accessible",
+        )
+
+        read_only_fields = (
+             "status",
+            "uploader",
+            "approver",
+            "approved_at",
+            "archived_at",
+            "cloudinary_asset_id",
+            "public_id",
+            "delivery_type",
+            "secure_url",
+            "original_filename",
+            "image_format",
+            "width",
+            "height",
+            "bytes",
+            "version",
+            "created_at",
+            "updated_at",
+        )
