@@ -20,9 +20,51 @@ class AssetPagination(PageNumberPagination):
     max_page_size = 100
 
 def visible_assets_for_user(user):
+    """ Return a queryset of assets visible to the given user. """
+    queryset = Asset.objects.select_related("uploader", "approver").prefetch_related("tags", "collections", "collections_created_by")
 
+    role = workflow_service.user_role(user)
+    if role == "admin":
+        return queryset
 
+    today = timezone.now().date()
 
+    viewer_rule = (
+        Q(
+            status=Asset.Status.APPROVED,
+            rights_status__in=(
+                Asset.RightsStatus.CLEARED,
+                Asset.RightsStatus.RESTRICTED,
+            ),
+        )
+        & ~Q(
+            permitted_use=Asset.PermittedUse.INTERNAL
+        )
+        & (
+            Q(expiry_date__isnull=True)
+            | Q(expiry_date__gte=today)
+        )
+    )
+
+    if role == "editor":
+        return queryset.filter(
+            Q(uploader=user) | viewer_rule
+        ).distinct()
+
+    if role == "viewer":
+        return queryset.filter(viewer_rule).distinct()
+    
+    return queryset.none()
+
+class AssetViewSet(viewsets.ModelViewSet):
+    """ ViewSet for managing assets. """
+    serializer_class = AssetSerializer
+    permission_classes = [IsAuthenticated, AssetPermission]
+    pagination_class = AssetPagination
+
+    def get_queryset(self):
+        """ Return assets visible to the requesting user. """
+        return visible_assets_for_user(self.request.user)
 
 
 class TagViewSet(viewsets.ModelViewSet):
