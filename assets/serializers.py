@@ -53,11 +53,11 @@ class AssetEventSerializer(serializers.ModelSerializer):
 
 
 class AssetSerializer(serializers.ModelSerializer):
-    created_by = UserSummarySerializer(read_only=True)
-    collection = CollectionSerializer(read_only=True)
+    """ JSON representation of an Asset, including the creator, collection, and tags. """
+    
     tags = TagSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = Asset
-        fields = ("id","name","description","file","status","collection","tags","created_by","created_at",)
-        read_only_fields = ("created_by", "created_at",)
+    collection = CollectionSerializer(read_only=True, many=True)
+    uploader = UserSummarySerializer(read_only=True)
+    approver = UserSummarySerializer(read_only=True)
+    is_expired = serializers.BooleanField(read_only=True)
+    is_viewer_accessible = serializers.BooleanField(read_only=True)
