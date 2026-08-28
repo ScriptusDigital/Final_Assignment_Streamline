@@ -744,3 +744,74 @@ class AssetAPITests(AssetFactoryMixin, APITestCase):
         self.assertIn(str(own_draft.pk), ids)
         self.assertIn(str(public_asset.pk), ids)
         self.assertNotIn(str(hidden_asset.pk), ids)
+
+    def test_editor_can_patch_own_draft_but_not_another_asset(self):
+        own_draft = self.make_asset(
+            self.editor,
+            status=Asset.Status.DRAFT,
+        )
+
+        other_asset = self.make_asset(
+            self.other_editor,
+            status=Asset.Status.APPROVED,
+            approver=self.admin,
+            approved_at=timezone.now(),
+        )
+
+        self.client.force_authenticate(self.editor)
+
+        own_response = self.client.patch(
+            reverse(
+                "asset-detail",
+                args=[own_draft.pk],
+            ),
+            {"caption": "Updated through the API"},
+            format="json",
+        )
+
+        other_response = self.client.patch(
+            reverse(
+                "asset-detail",
+                args=[other_asset.pk],
+            ),
+            {"caption": "Unauthorised change"},
+            format="json",
+        )
+
+        self.assertEqual(own_response.status_code, 200)
+        self.assertEqual(other_response.status_code, 403)
+
+        own_draft.refresh_from_db()
+
+        self.assertEqual(
+            own_draft.caption,
+            "Updated through the API",
+        )
+        self.assertTrue(
+            own_draft.events.filter(
+                action=AssetEvent.Action.UPDATED
+            ).exists()
+        )
+
+    def test_expired_asset_returns_not_found_to_viewer(self):
+        expired_asset = self.make_asset(
+            self.editor,
+            status=Asset.Status.APPROVED,
+            approver=self.admin,
+            approved_at=timezone.now(),
+            expiry_date=(
+                timezone.localdate()
+                - timedelta(days=1)
+            ),
+        )
+
+        self.client.force_authenticate(self.viewer)
+
+        response = self.client.get(
+            reverse(
+                "asset-detail",
+                args=[expired_asset.pk],
+            )
+        )
+
+        self.assertEqual(response.status_code, 404)
