@@ -61,3 +61,29 @@ class AssetFactoryMixin:
         values.update(overrides)
 
         return Asset.objects.create(**values)
+
+class AssetModelTests(AssetFactoryMixin, TestCase):
+    def setUp(self):
+        User = get_user_model()
+
+        self.editor = User.objects.create_user(
+            email="editor-model@example.com",
+            password="test-password",
+            role="editor",
+        )
+        self.admin = User.objects.create_user(
+            email="admin-model@example.com",
+            password="test-password",
+            role="admin",
+        )
+
+    def test_asset_uses_uuid_and_cloudinary_identifiers(self):
+        asset = self.make_asset(uploader=self.editor)
+
+        self.assertEqual(asset.id.version, 4)
+        self.assertTrue(asset.cloudinary_asset_id.startswith("immutable-"
+            )
+        )
+        self.assertTrue(asset.public_id.startswith("streamline/assets/"
+            )
+        )
