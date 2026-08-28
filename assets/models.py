@@ -86,7 +86,8 @@ class Asset(models.Model):
     #editorial metadata
     title = models.CharField(max_length=180)
 
-    alt_text = models.CharField(max_length=300, blank=True, help_text=("Alternative text for accessibility and SEO"),)
+    alt_text = models.CharField(max_length=300, blank=True, help_text=("Description for people using "
+            "assistive technology."),)
     
 
     caption = models.TextField(blank=True)
@@ -151,7 +152,7 @@ class Asset(models.Model):
     archived_at = models.DateTimeField(null=True, blank=True)
 
 
-#Storage respose data (Cloudinary  )
+#Storage response data (Cloudinary response)
 
     cloudinary_asset_id = models.CharField(max_length=255, unique=True)
 
@@ -247,3 +248,25 @@ class Asset(models.Model):
             != self.PermittedUse.INTERNAL
             and not self.is_expired
         )
+
+class AssetEvent(models.Model):
+    """Model for events related to assets (e.g., status changes, approvals)."""
+
+    asset = models.ForeignKey(
+        Asset,
+        on_delete=models.CASCADE,
+        related_name="events",
+    )
+    event_type = models.CharField(max_length=50)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="asset_events",
+    )
+    timestamp = models.DateTimeField(auto_now_add=True)
+    details = models.JSONField(blank=True, null=True)
+
+    class Meta:
+        ordering = ("-timestamp",)
