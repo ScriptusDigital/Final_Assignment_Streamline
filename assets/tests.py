@@ -304,3 +304,43 @@ class AssetSerializerTests(AssetFactoryMixin, TestCase):
         self.assertFalse(data["is_expired"])
         self.assertTrue(data["is_viewer_accessible"])
         self.assertEqual(data["public_id"], asset.public_id)
+
+    def test_update_changes_relationships_and_creates_event(self):
+        tag1 = Tag.objects.create(name="Athletics")
+        tag2 = Tag.objects.create(name="Marathon")
+
+        collection1 = Collection.objects.create(
+            name="City Marathon",
+            created_by=self.editor,
+        )
+        collection2 = Collection.objects.create(
+            name="International Marathon",
+            created_by=self.editor,
+        )
+
+        asset = self.make_asset(self.editor)
+
+        asset.tags.add(tag1)
+        asset.collections.add(collection1)
+
+        update_data = {
+            "tag_ids": [tag2.id],
+            "collection_ids": [collection2.id],
+        }
+
+        serializer = AssetSerializer(
+            instance=asset,
+            data=update_data,
+            partial=True,
+            context={"request": APIRequestFactory().put("/api/assets/")},
+        )
+
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+
+        updated_asset = serializer.save()
+
+        self.assertEqual(list(updated_asset.tags.all()), [tag2])
+        self.assertEqual(list(updated_asset.collections.all()), [collection2])
+
+        event = AssetEvent.objects.filter(asset=updated_asset).latest("created_at")
+        self.assertEqual(event.action, AssetEvent.Action.UPDATED)
