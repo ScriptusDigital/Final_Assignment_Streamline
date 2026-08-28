@@ -306,41 +306,69 @@ class AssetSerializerTests(AssetFactoryMixin, TestCase):
         self.assertEqual(data["public_id"], asset.public_id)
 
     def test_update_changes_relationships_and_creates_event(self):
-        tag1 = Tag.objects.create(name="Athletics")
-        tag2 = Tag.objects.create(name="Marathon")
+        original_tag = Tag.objects.create(name="Road")
+        replacement_tag = Tag.objects.create(name="Track")
 
-        collection1 = Collection.objects.create(
-            name="City Marathon",
-            created_by=self.editor,
-        )
-        collection2 = Collection.objects.create(
-            name="International Marathon",
+        collection = Collection.objects.create(
+            name="Olympic Finals",
             created_by=self.editor,
         )
 
         asset = self.make_asset(self.editor)
+        asset.tags.add(original_tag)
 
-        asset.tags.add(tag1)
-        asset.collections.add(collection1)
+        original_public_id = asset.public_id
 
-        update_data = {
-            "tag_ids": [tag2.id],
-            "collection_ids": [collection2.id],
-        }
+        request = APIRequestFactory().patch(
+            f"/api/assets/{asset.pk}/"
+        )
+        request.user = self.editor
 
         serializer = AssetSerializer(
             instance=asset,
-            data=update_data,
+            data={
+                "caption": "Updated race caption",
+                "tag_ids": [replacement_tag.pk],
+                "collection_ids": [collection.pk],
+                "status": Asset.Status.APPROVED,
+                "public_id": "forged-public-id",
+            },
             partial=True,
-            context={"request": APIRequestFactory().put("/api/assets/")},
+            context={"request": request},
         )
 
         self.assertTrue(serializer.is_valid(), serializer.errors)
 
         updated_asset = serializer.save()
 
-        self.assertEqual(list(updated_asset.tags.all()), [tag2])
-        self.assertEqual(list(updated_asset.collections.all()), [collection2])
+        self.assertEqual(
+            updated_asset.caption,
+            "Updated race caption",
+        )
+        self.assertEqual(
+            list(updated_asset.tags.all()),
+            [replacement_tag],
+        )
+        self.assertEqual(
+            list(updated_asset.collections.all()),
+            [collection],
+        )
 
-        event = AssetEvent.objects.filter(asset=updated_asset).latest("created_at")
-        self.assertEqual(event.action, AssetEvent.Action.UPDATED)
+        self.assertEqual(
+            updated_asset.status,
+            Asset.Status.DRAFT,
+        )
+        self.assertEqual(
+            updated_asset.public_id,
+            original_public_id,
+        )
+
+        event = updated_asset.events.get(
+            action=AssetEvent.Action.UPDATED
+        )
+
+        self.assertEqual(event.actor, self.editor)
+        self.assertCountEqual(
+            event.metadata["changed_fields"],
+            ["caption", "tags", "collections"],
+        )
