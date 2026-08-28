@@ -203,3 +203,17 @@ class AssetSerializer(serializers.ModelSerializer):
             ) from exc
 
         return instance
+
+
+class DashboardSerializer(serializers.Serializer):
+    """ Serializer for the dashboard summary data. """
+    total_assets = serializers.IntegerField()
+    status_breakdown = serializers.DictField(child=serializers.IntegerField())
+
+    pending_review_count = serializers.IntegerField()
+    missing_metadata_count = serializers.IntegerField()
+    expiring_rights_count = serializers.IntegerField()
+
+    pending_review = AssetSerializer(many=True)
+    expiring_rights = AssetSerializer(many=True)
+    recent_assets = AssetSerializer(many=True)
