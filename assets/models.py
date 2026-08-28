@@ -80,3 +80,28 @@ class Asset(models.Model):
         EDITORIAL = "editorial", "Editorial"
         MARKETING = "marketing", "Marketing"
         ALL = "all", "All approved uses"
+
+        id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    #editorial metadata
+    title = models.CharField(max_length=255)
+
+    caption = models.TextField(blank=True)
+
+    alt_text = models.TextField(blank=True)
+
+    photographer_credit = models.CharField(max_length=255, blank=True)
+
+    event_name = models.CharField(max_length=255, blank=True)
+
+    location = models.CharField(max_length=255, blank=True)
+
+    captured_at = models.DateField(null=True, blank=True)
+
+    notes = models.TextField(blank=True)
+
+    tags = models.ManyToManyField(Tag, blank=True, related_name="assets")
+
+    collections = models.ManyToManyField(
+        Collection, blank=True, related_name="assets",
+    )
