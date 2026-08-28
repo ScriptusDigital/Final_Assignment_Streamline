@@ -252,21 +252,17 @@ class Asset(models.Model):
 class AssetEvent(models.Model):
     """Model for events related to assets (e.g., status changes, approvals)."""
 
-    asset = models.ForeignKey(
-        Asset,
-        on_delete=models.CASCADE,
-        related_name="events",
-    )
-    event_type = models.CharField(max_length=50)
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="asset_events",
-    )
-    timestamp = models.DateTimeField(auto_now_add=True)
-    details = models.JSONField(blank=True, null=True)
-
-    class Meta:
-        ordering = ("-timestamp",)
+    class Action(models.TextChoices):
+        CREATED = "created", "Created"
+        UPDATED = "updated", "Metadata updated"
+        SUBMITTED = ("submitted", "Submitted for review",
+        )
+        APPROVED = "approved", "Approved"
+        CHANGES_REQUESTED = ("changes_requested", "Changes requested",
+        )
+        ARCHIVED = "archived", "Archived"
+        RESTORED = "restored", "Restored"
+        DOWNLOADED = (
+            "downloaded",
+            "Download link requested",
+        )
