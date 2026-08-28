@@ -11,6 +11,20 @@ from .permissions import AssetPermission, TaxonomyPermission
 from .serializers import (AssetSerializer,CollectionSerializer,TagSerializer,
 )
 from .services import workflow_service
+
+
+class AssetPagination(PageNumberPagination):
+    """ Custom pagination class for Asset model. """
+    page_size = 24
+    page_size_query_param = "page_size"
+    max_page_size = 100
+
+def visible_assets_for_user(user):
+
+
+
+
+
 class TagViewSet(viewsets.ModelViewSet):
     """ ViewSet for managing tags. """
     serializer_class = TagSerializer
