@@ -515,4 +515,41 @@ class TaxonomyAPITests(AssetFactoryMixin, APITestCase):
         User = get_user_model()
 
         self.viewer = User.objects.create_user(
-            email="
+            email="taxonomy.viewer@example.com",
+            password="test-password",
+            role=User.Role.VIEWER,
+        )
+        self.editor = User.objects.create_user(
+            email="taxonomy.editor@example.com",
+            password="test-password",
+            role=User.Role.EDITOR,
+        )
+        self.admin = User.objects.create_user(
+            email="taxonomy.admin@example.com",
+            password="test-password",
+            role=User.Role.ADMIN,
+        )
+
+    def test_authentication_is_required(self):
+
+        response = self.client.get(reverse("tag-list"))
+        self.assertIn(response.status_code, (401, 403))
+
+    def test_lists_include_asset_counts(self):
+        tag1 = Tag.objects.create(name="Tag One")
+        tag2 = Tag.objects.create(name="Tag Two")
+
+        self.make_asset(self.editor, status=Asset.Status.APPROVED).tags.add(tag1)
+        self.make_asset(self.editor, status=Asset.Status.APPROVED).tags.add(tag1)
+        self.make_asset(self.editor, status=Asset.Status.APPROVED).tags.add(tag2)
+
+        self.client.force_authenticate(user=self.viewer)
+
+        response = self.client.get(reverse("tag-list"))
+        self.assertEqual(response.status_code, 200)
+
+        data = response.json()
+        tag_counts = {item["name"]: item["asset_count"] for item in data}
+
+        self.assertEqual(tag_counts.get("Tag One"), 2)
+        self.assertEqual(tag_counts.get("Tag Two"), 1)
