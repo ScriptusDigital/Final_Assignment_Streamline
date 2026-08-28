@@ -64,8 +64,8 @@ class Asset(models.Model):
     """Model for assets (images) in the catalogue."""
     class Status(models.TextChoices):
         DRAFT = "draft", "Draft"
-        IN_REVIEW = "in_review", "In Review"
-        CHANGES_REQUESTED = ("changes_requested", "Changes Requested")
+        IN_REVIEW = "in_review", "In review"
+        CHANGES_REQUESTED = ("changes_requested", "Changes requested")
         APPROVED = "approved", "Approved"
         ARCHIVED = "archived", "Archived"
 
@@ -86,10 +86,9 @@ class Asset(models.Model):
     #editorial metadata
     title = models.CharField(max_length=180)
 
-    alt_text = models.CharField(max_length=300, blank=True, help_text=("Description for people using "
-            "assistive technology."),)
-    
-
+    alt_text = models.CharField( max_length=300,blank=True,
+    help_text="A concise description for people using assistive technology.",
+)
     caption = models.TextField(blank=True)
 
 
@@ -289,6 +288,8 @@ class AssetEvent(models.Model):
         max_length=24, choices=Asset.Status.choices, blank=True,
     )
 
+    message = models.TextField(blank=True)
+
     metadata = models.JSONField(default=dict, blank=True,)
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -296,10 +297,10 @@ class AssetEvent(models.Model):
     class Meta:
         ordering = ("-created_at",)
         indexes = [
-            models.Index(fields=("asset", "action", "-created_at"),name="asset_event_asset_idx",
+            models.Index(fields=("asset", "-created_at"),name="asset_event_asset_idx",
             ),
 
-            models.Index(fields=("actor", "action", "-created_at"),name="asset_event_actor_idx",
+            models.Index(fields=("actor", "-created_at"),name="asset_event_actor_idx",
             ),
         ]
 
