@@ -183,4 +183,18 @@ class CollectionSerializerTests(TestCase):
         self.request = APIRequestFactory().post("/api/collections/")
         self.request.user = self.editor
 
-    def te
+    def test_create_assigns_authenticated_user(self):
+            serializer = CollectionSerializer(
+                data={
+                    "name": "Paris Games",
+                    "description": "Photography from the Paris event.",
+                },
+                context={"request": self.request},
+            )
+
+            self.assertTrue(serializer.is_valid(), serializer.errors)
+
+            collection = serializer.save()
+
+            self.assertEqual(collection.created_by, self.editor)
+            self.assertEqual(collection.slug, "paris-games")
