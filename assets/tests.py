@@ -138,3 +138,18 @@ class AssetModelTests(AssetFactoryMixin, TestCase):
             second.slug,
             "press-area-2",
         )
+
+
+class TagSerializerTests(TestCase):
+    def test_serializer_returns_slug_and_asset_count(self):
+        tag = Tag.objects.create(name="Athletics")
+
+        tag = Tag.objects.annotate(asset_count=Count('asset')).get(pk=tag.pk)
+        data = TagSerializer(tag).data
+
+
+        self.assertEqual(data['name'], 'athletics')
+        self.assertEqual(data['slug'], 'athletics')
+        self.assertEqual(data['asset_count'], 0)
+
+    
