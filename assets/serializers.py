@@ -2,7 +2,7 @@ from rest_framework import serializers
 from .models import Tag
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-from.models import Collection, Tag, AssetEvent
+from.models import Asset, Collection, Tag, AssetEvent
 
 
 class UserSummarySerializer(serializers.ModelSerializer):
@@ -50,3 +50,14 @@ class AssetEventSerializer(serializers.ModelSerializer):
         model = AssetEvent
         fields = ("id","actor","action","action_label","from_status","to_status","message","metadata","created_at",
         )
+
+
+class AssetSerializer(serializers.ModelSerializer):
+    created_by = UserSummarySerializer(read_only=True)
+    collection = CollectionSerializer(read_only=True)
+    tags = TagSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Asset
+        fields = ("id","name","description","file","status","collection","tags","created_by","created_at",)
+        read_only_fields = ("created_by", "created_at",)
