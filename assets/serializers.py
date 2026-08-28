@@ -41,3 +41,19 @@ class CollectionSerializer(serializers.ModelSerializer):
             creator = (request.user if request and request.user.is_authenticated else None)
 
             return Collection.objects.create(created_by=creator, **validated_data)
+
+
+class CollectionSerializerTests(TestCase):
+    def setUp(self):
+        User = get_user_model()
+
+        self.editor = User.objects.create_user(
+            email="collection.editor@example.com",
+            password="test-password",
+            first_name="Rich"
+            last_name="Editor",
+            role=User.Role.EDITOR,
+        )
+
+        self.factory = APIRequestFactory()
+        self.user = get_user_model().objects.create_user(
