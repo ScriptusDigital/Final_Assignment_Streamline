@@ -1,17 +1,14 @@
-
-# Create your models here.
-
-"""Database models for Streamline's image catalogue"""
+"""Database models for Streamline's image catalogue."""
 
 from __future__ import annotations
-import uuid
-from xml.parsers.expat import errors
-from django.conf import settings
-from django.db import models
-from django.utils.text import slugify
 
+import uuid
+
+from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.db import models
 from django.utils import timezone
+from django.utils.text import slugify
 
 
 class NamedSlugModel(models.Model):
@@ -73,9 +70,9 @@ class Asset(models.Model):
         ARCHIVED = "archived", "Archived"
 
     class RightsStatus(models.TextChoices):
-        UNKNOWN = "unknown", "Not assessed",
-        CLEARED = "cleared", "Cleared",
-        RESTRICTED = "restricted", "Restricted",
+        UNKNOWN = "unknown", "Not assessed"
+        CLEARED = "cleared", "Cleared"
+        RESTRICTED = "restricted", "Restricted"
         EXPIRED = "expired", "Expired"
 
     class PermittedUse(models.TextChoices):
@@ -239,7 +236,7 @@ class Asset(models.Model):
          )
 
     @property 
-    def is_viewer_accesible(self):
+    def is_viewer_accessible(self):
         """Whether the asset is accessible to users with the 'viewer' role."""
         return (self.status == self.Status.APPROVED and self.rights_status
             in (
