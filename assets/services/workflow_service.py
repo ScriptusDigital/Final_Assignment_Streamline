@@ -20,9 +20,15 @@ def is_admin(user) -> bool:
 def is_editor(user) -> bool:
     return user_role(user) == "editor"
 
-def can_edit_asset(user, asset: Asset) -> bool:
-  return is_admin(user) or (is_editor(user) and asset.uploader_id == user.pk and asset.status in(Asset.Status.DRAFT, Asset.Status.CHANGES_REQUESTED))
-
+def can_edit_metadata(user, asset: Asset) -> bool:
+    return is_admin(user) or (
+        is_editor(user)
+        and asset.uploader_id == user.pk
+        and asset.status in (
+            Asset.Status.DRAFT,
+            Asset.Status.CHANGES_REQUESTED,
+        )
+    )
 def can_view(user, asset: Asset) -> bool:
   if is_admin(user):
     return True

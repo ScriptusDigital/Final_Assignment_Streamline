@@ -445,7 +445,7 @@ class WorkflowAccessTests(AssetFactoryMixin, TestCase):
                 )
             )
 
-            seld.assertFalse(
+            self.assertFalse(
                 workflow_service.can_edit_metadata(
                     self.editor,
                     other_draft,
