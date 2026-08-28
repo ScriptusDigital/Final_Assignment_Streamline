@@ -9,7 +9,9 @@ from django.utils import timezone
 
 from .models import Asset, Tag
 from django.db.models import Count
-from .serializers import TagSerializer
+from .serializers import CollectionSerializer, TagSerializer
+from rest_framework.test import APIRequestFactory
+
 
 def cloudinary_response(number=1):
     """Dummy provider data without contacting Cloudinary."""
@@ -165,3 +167,20 @@ class TagSerializerTests(TestCase):
 
         self.assertEqual(tag.slug, "press-area")
         self.assertFalse(hasattr(tag, "asset_count"))
+
+class CollectionSerializerTests(TestCase):
+    def setUp(self):
+        User = get_user_model()
+
+        self.editor = User.objects.create_user(
+            email="collection.editor@example.com",
+            password="test-password",
+            first_name="Rich",  
+            last_name="Editor",
+            role=User.Role.EDITOR,
+        )
+
+        self.request = APIRequestFactory().post("/api/collections/")
+        self.request.user = self.editor
+
+    def te

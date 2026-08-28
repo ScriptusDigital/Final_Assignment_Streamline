@@ -3,8 +3,7 @@ from .models import Tag
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from.models import Collection, Tag
-from .serializers import CollectionSerializer, TagSerializer
-from rest_framework.test import APIRequestFactory
+
 
 class UserSummarySerializer(serializers.ModelSerializer):
     display_name = serializers.SerializerMethodField()
