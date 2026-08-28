@@ -8,10 +8,12 @@ from rest_framework.permissions import IsAuthenticated
 
 from .models import Asset, Collection, Tag
 from .permissions import AssetPermission, TaxonomyPermission
-from .serializers import (AssetSerializer,CollectionSerializer,TagSerializer,
+from .serializers import (AssetSerializer,CollectionSerializer,TagSerializer, DashboardSerializer
 )
 from .services import workflow_service
-
+from datetime import timedelta
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 class AssetPagination(PageNumberPagination):
     """ Custom pagination class for Asset model. """
@@ -79,6 +81,74 @@ class AssetViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """ Return a queryset of assets visible to the current user. """
         return visible_assets_for(self.request.user)
+
+class DashboardView(APIView):
+    """ API view for the dashboard, providing counts of assets by status. """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """ Return a JSON response with counts of assets by status. """
+        queryset = visible_assets_for(request.user)
+        today = timezone.localdate()
+        thirty_days = today + timedelta(days=30)
+
+        pending_review = queryset.filter(
+            status=Asset.Status.IN_REVIEW,
+        )
+
+        missing_metadata = queryset.filter(
+            Q(alt_text="")
+            | Q(photographer_credit="")
+            | Q(
+                rights_status=(
+                    Asset.RightsStatus.UNKNOWN
+                )
+            )
+        ).distinct()
+
+        expiring_rights = (queryset.filter(
+                expiry_date__range=(
+                    today,
+                    thirty_days,
+                )
+            )
+            .exclude(
+                rights_status=(
+                    Asset.RightsStatus.EXPIRED
+                )
+            )
+        )
+
+        status_breakdown = {
+            value: 0
+            for value, _label in Asset.Status.choices
+        }
+
+        status_counts = (
+            queryset
+            .values("status")
+            .annotate(count=Count("id"))
+        )
+
+        for item in status_counts:
+            status_breakdown[item["status"]] = item["count"]
+
+        counts = {
+            "draft": queryset.filter(status=Asset.Status.DRAFT).count(),
+            "changes_requested": queryset.filter(status=Asset.Status.CHANGES_REQUESTED).count(),
+            "approved": queryset.filter(status=Asset.Status.APPROVED).count(),
+            "expired": queryset.filter(
+                status=Asset.Status.APPROVED,
+                expiry_date__lt=today
+            ).count(),
+        }
+        return Response(counts)
+
+
+
+
+
+
 
 class TagViewSet(viewsets.ModelViewSet):
     """ ViewSet for managing tags. """
