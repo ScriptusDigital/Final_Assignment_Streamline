@@ -815,3 +815,28 @@ class AssetAPITests(AssetFactoryMixin, APITestCase):
         )
 
         self.assertEqual(response.status_code, 404)
+
+    def test_dashboard_is_role_aware(self):
+        approved_asset = self.make_asset(
+            self.editor,
+            status=Asset.Status.APPROVED,
+            approver=self.admin,
+            approved_at=timezone.now(),
+            expiry_date=(
+                timezone.localdate()
+                + timedelta(days=10)
+            ),
+        )
+
+        self.make_asset(
+            self.editor,
+            status=Asset.Status.IN_REVIEW,
+        )
+
+        self.make_asset(
+            self.editor,
+            status=Asset.Status.DRAFT,
+            alt_text="",
+        )
+
+        self.client.force_authenticate(self.admin)

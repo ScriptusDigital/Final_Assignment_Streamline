@@ -3,7 +3,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
-from .views import  CollectionViewSet, TagViewSet, AssetViewSet
+from .views import  CollectionViewSet, TagViewSet, AssetViewSet, DashboardView      
 
 router = DefaultRouter()
 
@@ -12,5 +12,6 @@ router.register(r"collections", CollectionViewSet, basename="collection")
 router.register(r"assets", AssetViewSet, basename="asset")
 
 urlpatterns = [
+    path("dashboard/", DashboardView.as_view(), name="dashboard"),
     path("", include(router.urls)),
 ]

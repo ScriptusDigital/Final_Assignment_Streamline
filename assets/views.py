@@ -133,18 +133,28 @@ class DashboardView(APIView):
         for item in status_counts:
             status_breakdown[item["status"]] = item["count"]
 
-        counts = {
-            "draft": queryset.filter(status=Asset.Status.DRAFT).count(),
-            "changes_requested": queryset.filter(status=Asset.Status.CHANGES_REQUESTED).count(),
-            "approved": queryset.filter(status=Asset.Status.APPROVED).count(),
-            "expired": queryset.filter(
-                status=Asset.Status.APPROVED,
-                expiry_date__lt=today
-            ).count(),
+
+        dashboard_data = {"total_assets": queryset.count(),
+            "status_breakdown": status_breakdown,
+            "pending_review_count": (
+                pending_review.count()
+            ),
+            "missing_metadata_count": (
+                missing_metadata.count()
+            ),
+            "expiring_rights_count": (
+                expiring_rights.count()
+            ),
+            "pending_review": pending_review[:6],
+            "expiring_rights": (
+                expiring_rights
+                .order_by("expiry_date")[:6]
+            ),
+            "recent_assets": queryset[:6],
         }
-        return Response(counts)
 
-
+        serializer = DashboardSerializer(dashboard_data, context={"request": request})
+        return Response(serializer.data)
 
 
 
