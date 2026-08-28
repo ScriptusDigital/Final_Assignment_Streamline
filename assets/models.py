@@ -106,3 +106,47 @@ class Asset(models.Model):
     collections = models.ManyToManyField(
         Collection, blank=True, related_name="assets",
     )
+
+
+    #Rights metadata
+    rights_status = models.CharField(
+        max_length=20,
+        choices=RightsStatus.choices,
+        default=RightsStatus.UNKNOWN,
+    )
+
+    permitted_use = models.CharField(
+        max_length=20,
+        choices=PermittedUse.choices,
+        default=PermittedUse.INTERNAL,
+    )
+
+    licence_details = models.TextField(blank=True)
+
+    expiry_date = models.DateField(null=True, blank=True)
+
+    #Workflow metadata
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.DRAFT,
+    )
+    uploader = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="uploaded_assets",
+    )
+
+    approver = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="approved_assets",
+    )
+
+    approved_at = models.DateTimeField(null=True, blank=True)
+
+    archived_at = models.DateTimeField(null=True, blank=True)
+
+
