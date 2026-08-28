@@ -57,15 +57,18 @@ def visible_assets_for_user(user):
     return queryset.none()
 
 class AssetViewSet(viewsets.ModelViewSet):
-    """ ViewSet for managing assets. """
     serializer_class = AssetSerializer
-    permission_classes = [IsAuthenticated, AssetPermission]
+    permission_classes = (
+        IsAuthenticated,
+        AssetPermission,
+    )
     pagination_class = AssetPagination
 
-    def get_queryset(self):
-        """ Return assets visible to the requesting user. """
-        return visible_assets_for_user(self.request.user)
+    http_method_names = ["get", "head", "patch", "options"]
 
+    def get_queryset(self):
+        """ Return a queryset of assets visible to the current user. """
+        return visible_assets_for_user(self.request.user)
 
 class TagViewSet(viewsets.ModelViewSet):
     """ ViewSet for managing tags. """
