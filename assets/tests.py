@@ -224,23 +224,24 @@ class AssetEventSerializerTests(AssetFactoryMixin, TestCase):
         User = get_user_model()
 
         self.editor = User.objects.create_user(
-            email="asset.event.editor@example.com",
+            email="event.editor@example.com",
             password="test-password",
-            first_name="Rich",
+            first_name="Alex",
             last_name="Editor",
             role=User.Role.EDITOR,
         )
 
-    def test_representation_includes_actor_and_action_label(self):
-        asset = self.make_asset(uploader=self.editor)
+    def test_event_representation_includes_actor_and_action_label(self):
+        asset = self.make_asset(self.editor)
 
         event = AssetEvent.objects.create(
             asset=asset,
             actor=self.editor,
-            action=AssetEvent.Action.UPLOADED,
-            message="Uploaded the asset.",
+            action=AssetEvent.Action.SUBMITTED,
+            from_status=Asset.Status.DRAFT,
+            to_status=Asset.Status.IN_REVIEW,
+            message="Ready for review.",
         )
-
         data = AssetEventSerializer(event).data
 
         self.assertEqual(data["actor"]["email"], self.editor.email)
