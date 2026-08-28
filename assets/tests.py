@@ -7,7 +7,7 @@ from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.utils import timezone
 
-from .models import Asset, Tag
+from .models import Asset, Collection, Tag
 from django.db.models import Count
 from .serializers import CollectionSerializer, TagSerializer
 from rest_framework.test import APIRequestFactory
@@ -198,3 +198,22 @@ class CollectionSerializerTests(TestCase):
 
             self.assertEqual(collection.created_by, self.editor)
             self.assertEqual(collection.slug, "paris-games")
+
+    def test_representation_includes_creator_and_asset_count(self):
+            collection = Collection.objects.create(
+                name="Athletics",
+                created_by=self.editor,
+            )
+
+            collection = (Collection.objects
+            .select_related('created_by')
+            .annotate(asset_count=Count('assets'))
+            .get(pk=collection.pk)
+        )
+
+            data = CollectionSerializer(collection).data
+
+            self.assertEqual(data["created_by"]["email"], self.editor.email)
+            self.assertEqual(data["created_by"]["display_name"], "Rich Editor")
+            self.assertEqual(data["created_by"]["role"], self.editor.role)
+            self.assertEqual(data["asset_count"], 0)
