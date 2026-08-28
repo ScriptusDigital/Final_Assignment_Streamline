@@ -840,3 +840,54 @@ class AssetAPITests(AssetFactoryMixin, APITestCase):
         )
 
         self.client.force_authenticate(self.admin)
+
+        admin_response = self.client.get(
+            reverse("dashboard")
+        )
+
+        self.assertEqual(admin_response.status_code, 200)
+
+        self.assertEqual(
+            admin_response.data["total_assets"],
+            3,
+        )
+        self.assertEqual(
+            admin_response.data["pending_review_count"],
+            1,
+        )
+        self.assertEqual(
+            admin_response.data["missing_metadata_count"],
+            1,
+        )
+        self.assertEqual(
+            admin_response.data["expiring_rights_count"],
+            1,
+        )
+
+        self.assertEqual(
+            admin_response.data["status_breakdown"]["in_review"],
+            1,
+        )
+
+        self.client.force_authenticate(self.viewer)
+
+        viewer_response = self.client.get(
+            reverse("dashboard")
+        )
+
+        self.assertEqual(
+            viewer_response.status_code,
+            200,
+        )
+        self.assertEqual(
+            viewer_response.data["total_assets"],
+            1,
+        )
+        self.assertEqual(
+            viewer_response.data["pending_review_count"],
+            0,
+        )
+        self.assertEqual(
+            viewer_response.data["recent_assets"][0]["id"],
+            str(approved_asset.pk),
+        )
