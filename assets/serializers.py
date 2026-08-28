@@ -12,7 +12,7 @@ class UserSummarySerializer(serializers.ModelSerializer):
         model = get_user_model()
         fields = ('id', 'email', 'display_name', 'role')
     def get_display_name(self, obj):
-        return obj.get_display_name() or obj.email  
+        return obj.get_full_name().strip() or obj.email
 
 class TagSerializer(serializers.ModelSerializer):
     asset_count = serializers.IntegerField(read_only=True)
@@ -41,20 +41,3 @@ class CollectionSerializer(serializers.ModelSerializer):
 
             return Collection.objects.create(created_by=creator, **validated_data)
 
-
-class CollectionSerializerTests(TestCase):
-    def setUp(self):
-        User = get_user_model()
-
-        self.editor = User.objects.create_user(
-            email="collection.editor@example.com",
-            password="test-password",
-            first_name="Rich",  
-            last_name="Editor",
-            role=User.Role.EDITOR,
-        )
-
-        self.request = APIRequestFactory().post("/api/collections/")
-        self.request.user = self.editor
-
-    def te
