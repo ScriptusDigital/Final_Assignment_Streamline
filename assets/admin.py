@@ -23,6 +23,7 @@ class CollectionAdmin(admin.ModelAdmin):
 class AssetEventInline(admin.TabularInline):
     model = AssetEvent
     extra = 0
+    can_delete = False
     readonly_fields = (
         "actor",
         "action",
