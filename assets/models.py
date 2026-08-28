@@ -13,10 +13,9 @@ from django.utils.text import slugify
 class NamedSlugModel(models.Model):
     """Abstract model for named objects with a slug field."""
 
-    name = models.CharField(max_length=255, unique=True)
-    slug = models.SlugField(max_length=255, unique=True, blank=True)
-
-    created_at = models.DateTimeField(auto_now_add=True),
+    name = models.CharField(max_length=80, unique=True)
+    slug = models.SlugField(max_length=90, unique=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         abstract = True
@@ -70,7 +69,7 @@ class Asset(models.Model):
         ARCHIVED = "archived", "Archived"
 
     class RightsStatus(models.TextChoices):
-        UNKNOWN = "unknown", "Unknown",
+        UNKNOWN = "unknown", "Not assessed",
         CLEARED = "cleared", "Cleared",
         RESTRICTED = "restricted", "Restricted",
         EXPIRED = "expired", "Expired"
@@ -81,22 +80,24 @@ class Asset(models.Model):
         MARKETING = "marketing", "Marketing"
         ALL = "all", "All approved uses"
 
-        id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     #editorial metadata
-    title = models.CharField(max_length=255)
+    title = models.CharField(max_length=180)
+
+    alt_text = models.CharField(max_length=255, blank=True, help_text=("Alternative text for accessibility and SEO"),)
+    
 
     caption = models.TextField(blank=True)
 
-    alt_text = models.TextField(blank=True)
 
-    photographer_credit = models.CharField(max_length=255, blank=True)
+    photographer_credit = models.CharField(max_length=180, blank=True)
 
-    event_name = models.CharField(max_length=255, blank=True)
+    event_name = models.CharField(max_length=180, blank=True)
 
-    location = models.CharField(max_length=255, blank=True)
+    location = models.CharField(max_length=180, blank=True)
 
-    captured_at = models.DateField(null=True, blank=True)
+    captured_at = models.DateTimeField(null=True, blank=True)
 
     notes = models.TextField(blank=True)
 
