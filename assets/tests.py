@@ -691,4 +691,56 @@ class TaxonomyAPITests(AssetFactoryMixin, APITestCase):
            expiry_date=timezone.localdate() - timedelta(days=1),
        )    
 
-       
+       self.make_asset(
+            self.editor,
+            status=Asset.Status.APPROVED,
+            approver=self.admin,
+            approved_at=timezone.now(),
+            permitted_use=Asset.PermittedUse.INTERNAL,
+        )
+
+       self.client.force_authenticate(self.viewer)
+
+       response = self.client.get(
+            reverse("asset-list")
+        )
+       self.assertEqual(response.status_code, 200)
+       ids = {
+            item["id"]
+            for item in self.results(response)
+        }
+
+       self.assertEqual(ids, {str(visible.pk)})
+
+
+    def test_editor_sees_own_assets_and_approved_usable(self):
+        own_draft = self.make_asset(
+            self.editor,
+            status=Asset.Status.DRAFT,
+        )
+        public_asset = self.make_asset(
+            self.other_editor,
+            status=Asset.Status.APPROVED,
+            approver=self.admin,
+            approved_at=timezone.now(),
+        )
+
+        hidden_asset = self.make_asset(
+            self.other_editor,
+            status=Asset.Status.DRAFT,
+        )
+
+        self.client.force_authenticate(self.editor)
+
+        response = self.client.get(
+            reverse("asset-list")
+        )
+        self.assertEqual(response.status_code, 200)
+        ids = {
+            item["id"]
+            for item in self.results(response)
+        }
+
+        self.assertIn(str(own_draft.pk), ids)
+        self.assertIn(str(public_asset.pk), ids)
+        self.assertNotIn(str(hidden_asset.pk), ids)
