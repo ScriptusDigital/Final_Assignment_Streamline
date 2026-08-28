@@ -417,7 +417,7 @@ class WorkflowAccessTests(AssetFactoryMixin, TestCase):
             "admin",
         )
 
-        def test_editor_edits_only_own_editable_assets(self):
+    def test_editor_edits_only_own_editable_assets(self):
             own_draft = self.make_asset(
                 self.editor,
                 status=Asset.Status.DRAFT,
@@ -458,3 +458,36 @@ class WorkflowAccessTests(AssetFactoryMixin, TestCase):
                     own_draft,
                 )
             )
+
+    def test_view_access_respects_owner_role_and_rights(self):
+        approved_asset = self.make_asset(
+            self.other_editor,
+            status=Asset.Status.APPROVED,
+            approver=self.admin,
+            approved_at=timezone.now(),
+        )
+
+        hidden_draft = self.make_asset(
+            self.other_editor,
+            status=Asset.Status.DRAFT,
+        )   
+
+        own_draft = self.make_asset(
+            self.editor,
+            status=Asset.Status.DRAFT,
+        )
+
+        self.assertAlmostEqual(
+            workflow_service.can_view(self.viewer, approved_asset),
+            True,
+        )               
+
+        self.assertAlmostEqual(
+            workflow_service.can_view(self.viewer, hidden_draft),
+            False,
+        )           
+
+        self.assertAlmostEqual(
+            workflow_service.can_view(self.editor, own_draft),
+            True,
+        )               
