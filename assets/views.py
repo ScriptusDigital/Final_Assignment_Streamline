@@ -1,3 +1,2 @@
-from django.shortcuts import render
+""" Rest API views for the assets app. """
 
-# Create your views here.
