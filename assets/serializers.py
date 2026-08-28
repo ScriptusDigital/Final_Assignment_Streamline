@@ -50,10 +50,12 @@ class CollectionSerializerTests(TestCase):
         self.editor = User.objects.create_user(
             email="collection.editor@example.com",
             password="test-password",
-            first_name="Rich"
+            first_name="Rich",  
             last_name="Editor",
             role=User.Role.EDITOR,
         )
 
-        self.factory = APIRequestFactory()
-        self.user = get_user_model().objects.create_user(
+        self.request = APIRequestFactory().post("/api/collections/")
+        self.request.user = self.editor
+
+    def te
