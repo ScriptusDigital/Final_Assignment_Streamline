@@ -536,20 +536,74 @@ class TaxonomyAPITests(AssetFactoryMixin, APITestCase):
         self.assertIn(response.status_code, (401, 403))
 
     def test_lists_include_asset_counts(self):
-        tag1 = Tag.objects.create(name="Tag One")
-        tag2 = Tag.objects.create(name="Tag Two")
+        tag = Tag.objects.create(name="Athletics")
+        collection = Collection.objects.create(
+            name="Olympic Finals",
+            created_by=self.editor,
+        )
 
-        self.make_asset(self.editor, status=Asset.Status.APPROVED).tags.add(tag1)
-        self.make_asset(self.editor, status=Asset.Status.APPROVED).tags.add(tag1)
-        self.make_asset(self.editor, status=Asset.Status.APPROVED).tags.add(tag2)
+        asset = self.make_asset(self.editor)
+        asset.tags.add(tag)
+        asset.collections.add(collection)
 
-        self.client.force_authenticate(user=self.viewer)
+        self.client.force_authenticate(self.viewer)
 
-        response = self.client.get(reverse("tag-list"))
-        self.assertEqual(response.status_code, 200)
+        tag_response = self.client.get(
+            reverse("tag-list")
+        )
+        collection_response = self.client.get(
+            reverse("collection-list")
+        )
 
-        data = response.json()
-        tag_counts = {item["name"]: item["asset_count"] for item in data}
+        self.assertEqual(tag_response.status_code, 200)
+        self.assertEqual(collection_response.status_code, 200)
+        self.assertEqual(
+            tag_response.data[0]["asset_count"],
+            1,
+        )
+        self.assertEqual(
+            collection_response.data[0]["asset_count"],
+            1,
+        )
 
-        self.assertEqual(tag_counts.get("Tag One"), 2)
-        self.assertEqual(tag_counts.get("Tag Two"), 1)
+    def test_taxonomy_write_permissions(self):
+        tag = Tag.objects.create(name="Athletics")
+
+        self.client.force_authenticate(self.viewer)
+
+        denied = self.client.post(
+            reverse("tag-list"),
+            {"name": "Cycling"},
+            format="json",
+        )
+
+        self.assertIn(denied.status_code, (403, 405))
+
+        self.client.force_authenticate(self.editor)
+
+        created = self.client.post(
+            reverse("collection-list"),
+            {"name": "Paris Games", 
+             "description": "Course demonstration."},
+            format="json",
+        )
+
+
+        self.assertEqual(created.status_code, 201)
+
+        collection = Collection.objects.get(
+            pk=created.data["id"]
+        )
+        self.assertEqual(collection.created_by, self.editor)
+
+
+        own_update = self.client.patch(
+            reverse(
+                "collection-detail",
+                args=[collection.pk],
+            ),
+            {"description": "Updated description"},
+            format="json",
+        )
+
+        self.assertEqual(own_update.status_code, 200)
