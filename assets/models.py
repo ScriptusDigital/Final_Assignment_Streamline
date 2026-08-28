@@ -5,9 +5,13 @@
 
 from __future__ import annotations
 import uuid
+from xml.parsers.expat import errors
 from django.conf import settings
 from django.db import models
 from django.utils.text import slugify
+
+from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 
 class NamedSlugModel(models.Model):
@@ -195,3 +199,34 @@ class Asset(models.Model):
 
     def __str__(self):
         return self.title
+
+    def clean(self):
+          errors = {}
+          if self.width is not None and self.width < 1:
+              errors["width"] = "Width must be a positive."
+
+          if self.height is not None and self.height < 1:
+              errors["height"] = "Height must be a positive."
+
+          if self.status == self.Status.APPROVED:
+                if self.rights_status not in (
+                      self.RightsStatus.CLEARED,
+                      self.RightsStatus.RESTRICTED,):
+                        
+                        errors["rights_status"] = "Approved assets must have rights status of 'Cleared' or 'Restricted'."   
+
+                if not self.approver_id:
+                    errors["approver"] = "Approved assets must have an approver."
+
+                if not self.approved_at:
+                    errors["approved_at"] = "Approved assets must have an approval date."
+
+                if self.permitted_use == self.PermittedUse.INTERNAL:
+                    errors["permitted_use"] = "Approved assets must have a permitted use other than 'Internal'."
+
+                if (self.expiry_date and self.expiry_date < timezone.localdate()):
+                   errors["expiry_date"] = ("An asset with expired rights " "cannot remain approved."
+                )
+
+          if errors:
+                raise ValidationError(errors)
