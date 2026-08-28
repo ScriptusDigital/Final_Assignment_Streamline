@@ -4,10 +4,11 @@
 """Database models for Streamline's image catalogue"""
 
 from __future__ import annotations
-
+import uuid
 from django.conf import settings
 from django.db import models
 from django.utils.text import slugify
+
 
 class NamedSlugModel(models.Model):
     """Abstract model for named objects with a slug field."""
@@ -57,3 +58,25 @@ class Collection(NamedSlugModel):
                 blank=True,
                 related_name="asset_collections",
             )
+
+
+class Asset(models.Model):
+    """Model for assets (images) in the catalogue."""
+    class Status(models.TextChoices):
+        DRAFT = "draft", "Draft"
+        IN_REVIEW = "in_review", "In Review"
+        CHANGES_REQUESTED = ("changes_requested", "Changes Requested")
+        APPROVED = "approved", "Approved"
+        ARCHIVED = "archived", "Archived"
+
+    class RightsStatus(models.TextChoices):
+        UNKNOWN = "unknown", "Unknown",
+        CLEARED = "cleared", "Cleared",
+        RESTRICTED = "restricted", "Restricted",
+        EXPIRED = "expired", "Expired"
+
+    class PermittedUse(models.TextChoices):
+        INTERNAL = "internal", "Internal use only"
+        EDITORIAL = "editorial", "Editorial"
+        MARKETING = "marketing", "Marketing"
+        ALL = "all", "All approved uses"
