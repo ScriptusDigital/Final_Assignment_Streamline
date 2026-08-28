@@ -35,3 +35,49 @@ class AssetEventInline(admin.TabularInline):
 
     def has_add_permission(self, request, obj=None):
         return False
+
+@admin.register(Asset)
+class AssetAdmin(admin.ModelAdmin):
+    list_display = (
+         "title",
+        "status",
+        "rights_status",
+        "uploader",
+        "expiry_date",
+        "created_at",
+    )
+    list_filter = (
+        "status",
+        "rights_status",
+        "permitted_use",
+        "created_at",
+    )
+    search_fields = (
+        "title",
+        "caption",
+        "alt_text",
+        "event_name",
+        "public_id",
+    )
+    autocomplete_fields = (
+        "uploader",
+        "approver",
+    )
+    filter_horizontal = (
+        "tags",
+        "collections",
+    )
+    readonly_fields = (
+        "id",
+        "cloudinary_asset_id",
+        "public_id",
+        "secure_url",
+        "image_format",
+        "width",
+        "height",
+        "bytes",
+        "version",
+        "created_at",
+        "updated_at",
+    )
+    inlines = (AssetEventInline,)
