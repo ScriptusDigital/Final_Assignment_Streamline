@@ -2,7 +2,8 @@ from rest_framework import serializers
 from .models import Tag
 from django.contrib.auth import get_user_model
 from.models import Asset, Collection, Tag, AssetEvent
-
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db import transaction
 
 class UserSummarySerializer(serializers.ModelSerializer):
     display_name = serializers.SerializerMethodField()
