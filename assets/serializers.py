@@ -152,3 +152,54 @@ class AssetSerializer(serializers.ModelSerializer):
             write_only=True,
             required=False,
         )
+
+    def update(self, instance, validated_data):
+        tags_marker = object()
+        collections_marker = object()
+
+        tags = validated_data.pop("tags", tags_marker)
+        collections = validated_data.pop(
+            "collections",
+            collections_marker,
+        )
+
+        changed_fields = list(validated_data)
+
+        if tags is not tags_marker:
+            changed_fields.append("tags")
+
+        if collections is not collections_marker:
+            changed_fields.append("collections")
+
+        try:
+            with transaction.atomic():
+                for field, value in validated_data.items():
+                    setattr(instance, field, value)
+
+                instance.full_clean()
+                instance.save()
+
+                if tags is not tags_marker:
+                    instance.tags.set(tags)
+
+                if collections is not collections_marker:
+                    instance.collections.set(collections)
+
+                if changed_fields:
+                    AssetEvent.objects.create(
+                        asset=instance,
+                        actor=self.context["request"].user,
+                        action=AssetEvent.Action.UPDATED,
+                        from_status=instance.status,
+                        to_status=instance.status,
+                        metadata={
+                            "changed_fields": changed_fields,
+                        },
+                    )
+
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError(
+                exc.message_dict
+            ) from exc
+
+        return instance
