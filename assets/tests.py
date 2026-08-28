@@ -87,3 +87,54 @@ class AssetModelTests(AssetFactoryMixin, TestCase):
         self.assertTrue(asset.public_id.startswith("streamline/assets/"
             )
         )
+
+    def test_viewer_access_requires_unexpired_rights(self):
+        asset = self.make_asset(
+            self.editor,
+            status=Asset.Status.APPROVED,
+            approver=self.admin,
+            approved_at=timezone.now(),
+            expiry_date=(
+                timezone.localdate()
+                + timedelta(days=1)
+            ),
+        )
+
+        self.assertTrue(asset.is_viewer_accessible)
+
+        asset.expiry_date = (
+            timezone.localdate()
+            - timedelta(days=1)
+        )
+
+        self.assertTrue(asset.is_expired)
+        self.assertFalse(asset.is_viewer_accessible)
+
+    def test_approved_asset_rejects_unknown_rights(self):
+        asset = self.make_asset(
+            self.editor,
+            status=Asset.Status.APPROVED,
+            approver=self.admin,
+            approved_at=timezone.now(),
+            rights_status=Asset.RightsStatus.UNKNOWN,
+        )
+
+        with self.assertRaises(ValidationError):
+            asset.full_clean()
+
+    def test_tag_slug_is_generated_and_unique(self):
+        first = Tag.objects.create(
+            name="Press Area"
+        )
+        second = Tag.objects.create(
+            name="Press-Area"
+        )
+
+        self.assertEqual(
+            first.slug,
+            "press-area",
+        )
+        self.assertEqual(
+            second.slug,
+            "press-area-2",
+        )
