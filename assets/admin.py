@@ -81,3 +81,40 @@ class AssetAdmin(admin.ModelAdmin):
         "updated_at",
     )
     inlines = (AssetEventInline,)
+
+
+@admin.register(AssetEvent)
+class AssetEventAdmin(admin.ModelAdmin):
+    list_display = (
+        "asset",
+        "action",
+        "actor",
+        "from_status",
+        "to_status",
+        "created_at",
+    )
+    list_filter = (
+        "action",
+        "created_at",
+    )
+    search_fields = (
+        "asset__title",
+        "actor__email",
+        "message",
+    )
+    readonly_fields = (
+        "asset",
+        "actor",
+        "action",
+        "from_status",
+        "to_status",
+        "message",
+        "metadata",
+        "created_at",
+    )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
