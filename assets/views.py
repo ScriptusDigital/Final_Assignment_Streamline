@@ -19,15 +19,25 @@ class AssetPagination(PageNumberPagination):
     page_size_query_param = "page_size"
     max_page_size = 100
 
-def visible_assets_for_user(user):
-    """ Return a queryset of assets visible to the given user. """
-    queryset = Asset.objects.select_related("uploader", "approver").prefetch_related("tags", "collections", "collections_created_by")
+def visible_assets_for(user):
+    """Return only assets that the user is permitted to discover."""
+
+    queryset = (
+        Asset.objects
+        .select_related("uploader", "approver")
+        .prefetch_related(
+            "tags",
+            "collections",
+            "collections__created_by",
+        )
+    )
 
     role = workflow_service.user_role(user)
+
     if role == "admin":
         return queryset
 
-    today = timezone.now().date()
+    today = timezone.localdate()
 
     viewer_rule = (
         Q(
@@ -53,7 +63,7 @@ def visible_assets_for_user(user):
 
     if role == "viewer":
         return queryset.filter(viewer_rule).distinct()
-    
+
     return queryset.none()
 
 class AssetViewSet(viewsets.ModelViewSet):
