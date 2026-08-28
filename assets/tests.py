@@ -373,7 +373,7 @@ class AssetSerializerTests(AssetFactoryMixin, TestCase):
             event.metadata["changed_fields"],
             ["caption", "tags", "collections"],
         )
-        
+
 class WorkflowAccessTests(AssetFactoryMixin, TestCase):
     def setUp(self):
         User = get_user_model()
@@ -398,3 +398,63 @@ class WorkflowAccessTests(AssetFactoryMixin, TestCase):
             password="test-password",
             role=User.Role.ADMIN,
         )
+    def test_user_role_identifies_each_access_level(self):
+        self.assertEqual(
+            workflow_service.user_role(AnonymousUser()),
+            "anonymous",
+        )
+
+        self.assertEqual(
+            workflow_service.user_role(self.viewer),
+            "viewer",
+        )
+        self.assertEqual(
+            workflow_service.user_role(self.editor),
+            "editor",
+        )
+        self.assertEqual(
+            workflow_service.user_role(self.admin),
+            "admin",
+        )
+
+        def test_editor_edits_only_own_editable_assets(self):
+            own_draft = self.make_asset(
+                self.editor,
+                status=Asset.Status.DRAFT,
+            )
+            own_review = self.make_asset(
+                self.editor,
+                status=Asset.Status.IN_REVIEW,
+            )
+            other_draft = self.make_asset(
+                self.other_editor,
+                status=Asset.Status.DRAFT,
+            )
+
+            self.assertTrue(
+                workflow_service.can_edit_metadata(
+                    self.editor,
+                    own_draft,
+                )
+            )
+
+            self.assertFalse(
+                workflow_service.can_edit_metadata(
+                    self.editor,
+                    own_review,
+                )
+            )
+
+            seld.assertFalse(
+                workflow_service.can_edit_metadata(
+                    self.editor,
+                    other_draft,
+                )
+            )
+
+            self.assertTrue(
+                workflow_service.can_edit_metadata(
+                    self.admin,
+                    own_draft,
+                )
+            )
