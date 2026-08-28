@@ -78,7 +78,7 @@ class AssetViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """ Return a queryset of assets visible to the current user. """
-        return visible_assets_for_user(self.request.user)
+        return visible_assets_for(self.request.user)
 
 class TagViewSet(viewsets.ModelViewSet):
     """ ViewSet for managing tags. """
