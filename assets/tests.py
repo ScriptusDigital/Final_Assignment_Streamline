@@ -6,11 +6,12 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.utils import timezone
+from django.urls import reverse 
 
 from .models import Asset, AssetEvent, Collection, Tag
 from django.db.models import Count
 from .serializers import AssetEventSerializer, AssetSerializer, CollectionSerializer, TagSerializer
-from rest_framework.test import APIRequestFactory
+from rest_framework.test import APIRequestFactory, APITestCase
 from django.contrib.auth.models import AnonymousUser
 from .services import workflow_service  
 
@@ -507,3 +508,11 @@ class WorkflowAccessTests(AssetFactoryMixin, TestCase):
                 hidden_draft,
             )
         )
+
+
+class TaxonomyAPITests(AssetFactoryMixin, APITestCase):
+    def setUp(self):
+        User = get_user_model()
+
+        self.viewer = User.objects.create_user(
+            email="
