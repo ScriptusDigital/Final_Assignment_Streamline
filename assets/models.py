@@ -150,3 +150,44 @@ class Asset(models.Model):
     archived_at = models.DateTimeField(null=True, blank=True)
 
 
+#Storage respose data (Cloudinary  )
+
+cloudinary_asset_id = models.CharField(max_length=255, blank=True)
+
+public_id = models.CharField(max_length=255, blank=True)
+
+delivery_type = models.CharField(max_length=50, blank=True)
+
+secure_url = models.URLField(
+        max_length=1000,
+    )
+original_filename = models.CharField(
+        max_length=255,
+        blank=True,
+    )
+image_format = models.CharField(
+        max_length=20,
+    )
+width = models.PositiveIntegerField()
+height = models.PositiveIntegerField()
+bytes = models.PositiveBigIntegerField()
+version = models.PositiveBigIntegerField(
+        null=True,
+        blank=True,
+    )
+
+created_at = models.DateTimeField(auto_now_add=True)
+
+updated_at = models.DateTimeField(auto_now=True)
+
+class Meta:
+        ordering = ("-created_at",)
+        indexes = [
+            models.Index(fields=["status", "-created_at"], name="asset_status_created_idx"),
+            models.Index(fields=["uploader", "status"], name="asset_uploader_status_idx"),
+            models.Index(fields=["rights_status", "expiry_date"], name="asset_rights_expiry_idx"),
+            models.Index(fields=["expiry_date"], name="asset_expiry_idx "),
+        ]
+
+def __str__(self):
+        return self.title
