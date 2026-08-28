@@ -41,4 +41,12 @@ class CollectionSerializer(serializers.ModelSerializer):
 
             return Collection.objects.create(created_by=creator, **validated_data)
 
-Class AssetEventSerializer(serializers.ModelSerializer):
+
+class AssetEventSerializer(serializers.ModelSerializer):
+    actor = UserSummarySerializer(read_only=True)
+    action_label = serializers.CharField(source='get_action_display', read_only=True)
+
+    class Meta:
+        model = AssetEvent
+        fields = ("id","actor","action","action_label","from_status","to_status","message","metadata","created_at",
+        )
