@@ -7,9 +7,9 @@ from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.utils import timezone
 
-from .models import Asset, Collection, Tag
+from .models import Asset, AssetEvent, Collection, Tag
 from django.db.models import Count
-from .serializers import CollectionSerializer, TagSerializer
+from .serializers import AssetEventSerializer, CollectionSerializer, TagSerializer
 from rest_framework.test import APIRequestFactory
 
 
@@ -217,3 +217,37 @@ class CollectionSerializerTests(TestCase):
             self.assertEqual(data["created_by"]["display_name"], "Rich Editor")
             self.assertEqual(data["created_by"]["role"], self.editor.role)
             self.assertEqual(data["asset_count"], 0)
+
+
+class AssetEventSerializerTests(AssetFactoryMixin, TestCase):
+    def setUp(self):
+        User = get_user_model()
+
+        self.editor = User.objects.create_user(
+            email="asset.event.editor@example.com",
+            password="test-password",
+            first_name="Rich",
+            last_name="Editor",
+            role=User.Role.EDITOR,
+        )
+
+    def test_representation_includes_actor_and_action_label(self):
+        asset = self.make_asset(uploader=self.editor)
+
+        event = AssetEvent.objects.create(
+            asset=asset,
+            actor=self.editor,
+            action=AssetEvent.Action.UPLOADED,
+            message="Uploaded the asset.",
+        )
+
+        data = AssetEventSerializer(event).data
+
+        self.assertEqual(data["actor"]["email"], self.editor.email)
+        self.assertEqual(data["actor"]["display_name"], "Alex Editor")
+        self.assertEqual(data["action"], "submitted")
+        self.assertEqual(data["action_label"], "Submitted")
+        self.assertEqual(data["from_status"], "draft")
+        self.assertEqual(data["to_status"], "in_review")
+        self.assertEqual(data["message"], "Ready for review.")
+        self.assertEqual(data["metadata"], {})
