@@ -230,3 +230,23 @@ class Asset(models.Model):
 
           if errors:
                 raise ValidationError(errors)
+
+    @property 
+    def is_expired(self):
+         return (self.rights_status == self.RightsStatus.EXPIRED or (
+            self.expiry_date is not None and self.expiry_date < timezone.localdate()
+        )
+         )
+
+    @property 
+    def is_viewer_accesible(self):
+        """Whether the asset is accessible to users with the 'viewer' role."""
+        return (self.status == self.Status.APPROVED and self.rights_status
+            in (
+                self.RightsStatus.CLEARED,
+                self.RightsStatus.RESTRICTED,
+            )
+            and self.permitted_use
+            != self.PermittedUse.INTERNAL
+            and not self.is_expired
+        )
