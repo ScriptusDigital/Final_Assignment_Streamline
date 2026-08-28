@@ -65,6 +65,7 @@ class AssetSerializer(serializers.ModelSerializer):
     collections = CollectionSerializer(read_only=True, many=True)
     collection_ids = serializers.PrimaryKeyRelatedField(
         many=True,
+        queryset=Collection.objects.all(),
         source="collections",
         write_only=True,
         required=False,
