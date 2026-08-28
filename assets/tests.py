@@ -607,3 +607,27 @@ class TaxonomyAPITests(AssetFactoryMixin, APITestCase):
         )
 
         self.assertEqual(own_update.status_code, 200)
+
+        shared_tag_update = self.client.patch(
+            reverse(
+                "tag-detail",
+                args=[tag.pk],
+            ),
+            {"name": "Track"},
+            format="json",
+        )   
+
+        self.assertEqual(shared_tag_update.status_code, 403)
+
+        self.client.force_authenticate(self.admin)
+
+        admin_tag_update = self.client.patch(
+            reverse(
+                "tag-detail",
+                args=[tag.pk],
+            ),
+            {"name": "Track"},
+            format="json",
+        )   
+
+        self.assertEqual(admin_tag_update.status_code, 200)
