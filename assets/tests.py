@@ -657,3 +657,38 @@ class TaxonomyAPITests(AssetFactoryMixin, APITestCase):
             password="test-password",
             role=User.Role.ADMIN,
         )
+
+    @staticmethod
+    def results(response):
+        """Return the list of asset IDs from a paginated API response."""
+        return response.data.get(
+            "results",
+            response.data,
+        )
+
+    def test_authentication_is_required(self):
+        response = self.client.get(reverse("asset-list"))
+        self.assertIn(response.status_code, (401, 403)) 
+
+    def test_viewer_sees_only_approved_usable_assets(self):
+       visible = self.make_asset(
+            self.other_editor,
+            status=Asset.Status.APPROVED,
+            approver=self.admin,
+            approved_at=timezone.now(),
+       )
+
+       self.make_asset(
+            self.editor,
+            status=Asset.Status.DRAFT,
+       )
+
+       self.make_asset(
+            self.other_editor,
+            status=Asset.Status.APPROVED,
+            approver=self.admin,
+            approved_at=timezone.now(),
+           expiry_date=timezone.localdate() - timedelta(days=1),
+       )    
+
+       
