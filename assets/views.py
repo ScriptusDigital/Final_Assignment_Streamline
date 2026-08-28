@@ -17,7 +17,7 @@ class TagViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """ Return all tags with the count of associated assets. """
-        return Tag.objects.annotate(asset_count=Count("assets", filter=Q(assets=True))).order_by("name")
+        return Tag.objects.annotate(asset_count=Count("assets", distinct=True)).order_by("name")
 
 class CollectionViewSet(viewsets.ModelViewSet):
     """ ViewSet for managing collections. """
