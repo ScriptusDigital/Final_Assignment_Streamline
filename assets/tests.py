@@ -9,7 +9,7 @@ from django.utils import timezone
 
 from .models import Asset, AssetEvent, Collection, Tag
 from django.db.models import Count
-from .serializers import AssetEventSerializer, CollectionSerializer, TagSerializer
+from .serializers import AssetEventSerializer, AssetSerializer, CollectionSerializer, TagSerializer
 from rest_framework.test import APIRequestFactory
 
 
@@ -251,3 +251,26 @@ class AssetEventSerializerTests(AssetFactoryMixin, TestCase):
         self.assertEqual(data["to_status"], "in_review")
         self.assertEqual(data["message"], "Ready for review.")
         self.assertEqual(data["metadata"], {})
+
+class AssetSerializerTests(AssetFactoryMixin, TestCase):
+    def setUp(self):
+        User = get_user_model()
+
+        self.editor = User.objects.create_user(
+            email="asset.editor@example.com",
+            password="test-password",
+            first_name="Sam",
+            last_name="Editor",
+            role=User.Role.EDITOR,
+        )
+
+        self.admin = User.objects.create_user(
+            email="asset.admin@example.com",
+            password="test-password",
+            first_name="Alex",
+            last_name="Admin",
+            role=User.Role.ADMIN,
+        )
+
+    def test_asset_representation_contains_nested_metadata(self):
+       tag
