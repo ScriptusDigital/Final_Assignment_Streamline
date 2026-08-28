@@ -477,17 +477,33 @@ class WorkflowAccessTests(AssetFactoryMixin, TestCase):
             status=Asset.Status.DRAFT,
         )
 
-        self.assertAlmostEqual(
-            workflow_service.can_view(self.viewer, approved_asset),
-            True,
-        )               
-
-        self.assertAlmostEqual(
-            workflow_service.can_view(self.viewer, hidden_draft),
-            False,
-        )           
-
-        self.assertAlmostEqual(
-            workflow_service.can_view(self.editor, own_draft),
-            True,
-        )               
+        self.assertTrue(
+            workflow_service.can_view(
+                self.viewer,
+                approved_asset,
+            )
+        )
+        self.assertFalse(
+            workflow_service.can_view(
+                self.viewer,
+                hidden_draft,
+            )
+        )
+        self.assertTrue(
+            workflow_service.can_view(
+                self.editor,
+                own_draft,
+            )
+        )
+        self.assertFalse(
+            workflow_service.can_view(
+                self.editor,
+                hidden_draft,
+            )
+        )
+        self.assertTrue(
+            workflow_service.can_view(
+                self.admin,
+                hidden_draft,
+            )
+        )
