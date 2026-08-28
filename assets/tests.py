@@ -631,3 +631,29 @@ class TaxonomyAPITests(AssetFactoryMixin, APITestCase):
         )   
 
         self.assertEqual(admin_tag_update.status_code, 200)
+
+
+        class AssetAPITests(AssetFactoryMixin, APITestCase):    
+            def setUp(self):
+                User = get_user_model()
+
+                self.viewer = User.objects.create_user(
+            email="api.viewer@example.com",
+            password="test-password",
+            role=User.Role.VIEWER,
+        )
+        self.editor = User.objects.create_user(
+            email="api.editor@example.com",
+            password="test-password",
+            role=User.Role.EDITOR,
+        )
+        self.other_editor = User.objects.create_user(
+            email="api.other@example.com",
+            password="test-password",
+            role=User.Role.EDITOR,
+        )
+        self.admin = User.objects.create_user(
+            email="api.admin@example.com",
+            password="test-password",
+            role=User.Role.ADMIN,
+        )
