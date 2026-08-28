@@ -152,4 +152,14 @@ class TagSerializerTests(TestCase):
         self.assertEqual(data['slug'], 'athletics')
         self.assertEqual(data['asset_count'], 0)
 
-    
+    def test_slug_and_asset_count_are_read_only(self):
+        tag = Tag.objects.create(name="Athletics")
+
+        tag = Tag.objects.annotate(asset_count=Count('asset')).get(pk=tag.pk)
+        serializer = TagSerializer(tag)
+
+        self.assertIn('slug', serializer.fields)
+        self.assertIn('asset_count', serializer.fields)
+
+        self.assertTrue(serializer.fields['slug'].read_only)
+        self.assertTrue(serializer.fields['asset_count'].read_only)
