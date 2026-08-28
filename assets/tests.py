@@ -273,7 +273,7 @@ class AssetSerializerTests(AssetFactoryMixin, TestCase):
         )
 
     def test_asset_representation_contains_nested_metadata(self):
-        tag = Tag.objects.create(name="Sports")
+        tag = Tag.objects.create(name="Athletics")
         collection = Collection.objects.create(
             name="Marathon",
             created_by=self.editor,
@@ -299,7 +299,7 @@ class AssetSerializerTests(AssetFactoryMixin, TestCase):
         self.assertEqual(data["tags"][0]["name"], "Athletics")
         self.assertEqual(
             data["collections"][0]["name"],
-            "Paris Games",
+            "Marathon",
         )
         self.assertFalse(data["is_expired"])
         self.assertTrue(data["is_viewer_accessible"])

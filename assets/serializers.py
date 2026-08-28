@@ -55,7 +55,20 @@ class AssetSerializer(serializers.ModelSerializer):
     """ JSON representation of an Asset, including the creator, collection, and tags. """
     
     tags = TagSerializer(many=True, read_only=True)
+    tag_ids = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=Tag.objects.all(),
+        source="tags",
+        write_only=True,
+        required=False,
+    )
     collections = CollectionSerializer(read_only=True, many=True)
+    collection_ids = serializers.PrimaryKeyRelatedField(
+        many=True,
+        source="collections",
+        write_only=True,
+        required=False,
+    )
     uploader = UserSummarySerializer(read_only=True)
     approver = UserSummarySerializer(read_only=True)
     is_expired = serializers.BooleanField(read_only=True)
@@ -74,7 +87,9 @@ class AssetSerializer(serializers.ModelSerializer):
             "captured_at",
             "notes",
             "tags",
+            "tag_ids",
             "collections",
+            "collection_ids",
             "rights_status",
             "permitted_use",
             "licence_details",
@@ -118,4 +133,20 @@ class AssetSerializer(serializers.ModelSerializer):
             "version",
             "created_at",
             "updated_at",
+        )
+
+        tag_ids = serializers.PrimaryKeyRelatedField(
+            many=True,
+            queryset=Tag.objects.all(),
+            source='tags',
+            write_only=True,
+            required=False,
+        )
+
+        collection_ids = serializers.PrimaryKeyRelatedField(
+            many=True,
+            queryset=Collection.objects.all(),
+            source='collections',
+            write_only=True,
+            required=False,
         )
