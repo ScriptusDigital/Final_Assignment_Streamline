@@ -2,6 +2,7 @@
 from __future__ import annotations
 from PIL import Image, UnidentifiedImageError
 
+
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 
 ALLOWED_PILLOW_FORMATS = {
@@ -13,13 +14,13 @@ ALLOWED_PILLOW_FORMATS = {
     "WEBP": "WEBP",
 }
 
-class ImaageValidationError(ValueError):
-   """The uploaded image is not valid or is in an unsupported format."""
+class ImageValidationError(ValueError):
+    """The uploaded image is not valid or is in an unsupported format."""
 
 def validate_image(uploaded_file) -> str:
-   """ Inspect the file bytes and return the image format if valid, otherwise raise an ImaageValidationError. """
+    """Inspect the file bytes and return the image format if valid, otherwise raise an ImageValidationError."""
 
-   size = getattr(uploaded_file, "size", None)
+    size = getattr(uploaded_file, "size", None)
 
     if size is None:
         position = uploaded_file.tell()
@@ -45,7 +46,7 @@ def validate_image(uploaded_file) -> str:
                 image.format or ""
             ).upper()
 
-            if image_format not in ALLOWED_PIL_FORMATS:
+            if image_format not in ALLOWED_PILLOW_FORMATS:
                 raise ImageValidationError(
                     "Only JPEG, PNG and WebP images are supported."
                 )
