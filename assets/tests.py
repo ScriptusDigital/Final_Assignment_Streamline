@@ -972,5 +972,23 @@ class CloudinaryServiceTests(TestCase):
             "CLOUD_NAME": "course-cloud",
             "API_KEY": "test-key",
             "API_SECRET": "test-secret",
-        }
+        },
         CLOUDINARY_URL="",)
+
+    @patch(
+        "assets.services."
+        "cloudinary_service.cloudinary.config"
+    )
+
+    def test_configures_cloudinary_from_django_settings(
+        self,
+        mocked_config,
+    ):
+        cloudinary_service._configure_cloudinary()
+
+        mocked_config.assert_called_once_with(
+            cloud_name="course-cloud",
+            api_key="test-key",
+            api_secret="test-secret",
+            secure=True,
+        )
