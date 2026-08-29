@@ -405,6 +405,7 @@ class AssetSerializerTests(AssetFactoryMixin, TestCase):
         )
 
     def test_file_is_required_on_create_but_not_update(self):
+        create_serializer = AssetSerializer()
 
         self.assertTrue(create_serializer.fields["file"].required)
 
