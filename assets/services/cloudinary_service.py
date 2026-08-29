@@ -100,7 +100,7 @@ def _configure_cloudinary() -> None:
                 api_key = unquote(parsed.username or "")
                 api_secret = unquote(parsed.password or "")
 
-        if all((cloud_name, api_key, api_secret)):
+    if all((cloud_name, api_key, api_secret)):
             cloudinary.config(
                 cloud_name=cloud_name,
                 api_key=api_key,

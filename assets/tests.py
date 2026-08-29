@@ -18,7 +18,7 @@ from .services import workflow_service, cloudinary_service
 from io import BytesIO
 from django.core.files.uploadedfile import SimpleUploadedFile
 from PIL import Image
-from unittest.mock import patch, 
+from unittest.mock import patch 
 
 def cloudinary_response(number=1):
     """Dummy provider data without contacting Cloudinary."""
