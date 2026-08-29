@@ -244,3 +244,51 @@ def approve(
         )
 
         return asset
+
+@transaction.atomic
+def request_changes(
+    asset: Asset,
+    actor,
+    reason: str,
+) -> Asset:
+    """Return an asset to its editor for revision."""
+
+    _assert_action(
+        actor,
+        asset,
+        "request_changes",
+    )
+
+    reason = (reason or "").strip()
+
+    if not reason:
+        raise WorkflowError({
+            "reason": (
+                "Explain why the asset needs changes."
+            ),
+        })
+
+    previous_status = asset.status
+
+    asset.status = (Asset.Status.CHANGES_REQUESTED
+    )
+    asset.approver = None
+    asset.approved_at = None
+
+    asset.save(update_fields=(
+        "status",
+        "approver",
+        "approved_at",
+        "updated_at",
+    ))
+
+    AssetEvent.objects.create(
+        asset=asset,
+        actor=actor,
+        action=AssetEvent.Action.CHANGES_REQUESTED,
+        from_status=previous_status,
+        to_status=asset.status,
+        message=reason,
+    )
+
+    return asset
