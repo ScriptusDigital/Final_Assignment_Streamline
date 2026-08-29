@@ -145,8 +145,8 @@ def upload_image(uploaded_file) -> dict:
         "public_id": response["public_id"],
         "delivery_type": response.get("type", "authenticated"),
         "secure_url": response["secure_url"],
-        "original_filename": str(response.get("original_filename") or getattr(uploaded_file, "name", "") or "")
-        ["255"],
+       "original_filename": str(response.get("original_filename")or getattr(uploaded_file, "name", "") or "")
+       [:255],
         "image_format": (
             response.get("format")
             or validated_format

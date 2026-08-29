@@ -1070,3 +1070,21 @@ class CloudinaryServiceTests(TestCase):
 
         self.assertFalse(uploads_options["overwrite"]
         )
+
+    @patch(
+        "assets.services.cloudinary_service."
+        "cloudinary.uploader.upload"
+    )
+
+    def test_upload_wraps_provider_failures(self, mocked_upload):
+        mocked_upload.side_effect = RuntimeError(
+            "Cloudinary service is down"
+        )
+
+        with self.assertRaisesRegex(
+            cloudinary_service.CloudinaryUploadError,
+            "could not be uploaded",
+        ):
+            cloudinary_service.upload_image(
+                image_upload()
+            )
