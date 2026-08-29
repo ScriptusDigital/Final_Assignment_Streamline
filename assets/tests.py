@@ -303,6 +303,26 @@ class AssetSerializerTests(AssetFactoryMixin, TestCase):
             role=User.Role.ADMIN,
         )
 
+    def test_existing_image_cannot_be_replaced(self):
+        asset = self.make_asset(self.editor)
+
+        request = APIRequestFactory().patch(
+            f"/api/assets/{asset.pk}/"
+        )
+        request.user = self.editor
+
+        serializer = AssetSerializer(
+            instance=asset,
+            data={
+                "file": image_upload(),
+            },
+            partial=True,
+            context={"request": request},
+        )
+
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("file", serializer.errors)
+
     def test_asset_representation_contains_nested_metadata(self):
         tag = Tag.objects.create(name="Athletics")
         collection = Collection.objects.create(

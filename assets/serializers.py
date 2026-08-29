@@ -147,6 +147,14 @@ class AssetSerializer(serializers.ModelSerializer):
             if self.instance is not None:
                 self.fields['file'].required = False
 
+    def validate(self, attrs):
+        if (self.instance is not None and "file" in attrs):
+            raise serializers.ValidationError(
+                {"file": ("Replacing a file is outside" "the MVP scope."),}
+            )
+
+        return attrs
+
     def update(self, instance, validated_data):
         tags_marker = object()
         collections_marker = object()
