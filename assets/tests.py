@@ -1108,6 +1108,39 @@ class AssetAPITests(AssetFactoryMixin, APITestCase):
             ).exists()
         )   
 
+    @patch(
+            "assets.serializers."
+        "cloudinary_service.upload_image"
+    )
+
+    def test_viewer_cannot_upload_asset(
+    self,
+    mocked_upload,
+):
+        mocked_upload.return_value = cloudinary_response(701)
+
+        self.client.force_authenticate(self.viewer)
+
+        response = self.client.post(
+            reverse("asset-list"),
+               {
+            "file": image_upload(),
+            "title": "Unauthorised upload",
+        },
+        format="multipart",
+    )
+
+        self.assertEqual(
+            response.status_code,
+            403,
+            response.data,
+        )
+        mocked_upload.assert_not_called()
+        self.assertFalse(
+            Asset.objects.filter(
+                title="Unauthorised upload"
+            ).exists()
+        )
 
 class CloudinaryServiceTests(TestCase):
     def test_validation_checks_bytes_not_extension(self):
