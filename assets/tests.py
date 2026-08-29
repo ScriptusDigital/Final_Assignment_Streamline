@@ -1980,6 +1980,67 @@ class AssetAPITests(AssetFactoryMixin, APITestCase):
         )   
 
 
+    @patch(
+        "assets.views.cloudinary_service."
+        "signed_download_url"
+    )
+    def test_secure_download_is_recorded(
+        self,
+        mocked_signed_download,
+    ):
+        asset = self.make_asset(
+            self.editor,
+            status=Asset.Status.APPROVED,
+            approver=self.admin,
+            approved_at=timezone.now(),
+        )
+
+        mocked_signed_download.return_value = (
+            cloudinary_service.SignedDownload(
+                url=(
+                    "https://example.test/"
+                    "temporary-download"
+                ),
+                expires_at=(
+                    timezone.now()
+                    + timedelta(minutes=5)
+                ),
+            )
+        )
+
+        self.client.force_authenticate(
+            self.viewer
+        )
+
+        response = self.client.get(
+            reverse("asset-download", args=[asset.pk])
+        )   
+
+        self.assertEqual(
+            response.status_code,
+            200,
+            response.data,
+        )
+
+        self.assertEqual(
+            response.data["url"],  
+            (
+                "https://example.test/"
+                "temporary-download"
+            ),
+        )
+
+        mocked_signed_download.assert_called_once_with(asset)
+
+        self.assertTrue(
+            asset.events.filter(
+                action=AssetEvent.Action.DOWNLOADED,
+                actor=self.viewer,
+            ).exists()
+        )
+
+
+
 class CloudinaryServiceTests(TestCase):
     def test_validation_checks_bytes_not_extension(self):
         disguised_text = SimpleUploadedFile(
