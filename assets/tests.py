@@ -1331,6 +1331,81 @@ class AssetAPITests(AssetFactoryMixin, APITestCase):
             ids,
         )
 
+    def test_expiry_filter_and_title_ordering(
+    self,
+):
+        zulu = self.make_asset(
+            self.editor,
+            title="Zulu photograph",
+            expiry_date=(
+                timezone.localdate()
+                + timedelta(days=20)
+            ),
+        )
+
+        alpha = self.make_asset(
+            self.editor,
+            title="Alpha photograph",
+            expiry_date=(
+                timezone.localdate()
+                + timedelta(days=10)
+            ),
+        )
+
+        no_expiry = self.make_asset(
+            self.editor,
+            title="No expiry photograph",
+            expiry_date=None,
+        )
+
+        self.client.force_authenticate(
+            self.admin
+        )
+
+        response = self.client.get(
+            reverse("asset-list"),
+            {
+                "has_expiry": "true",
+                "ordering": "title",
+            },
+        )
+
+        self.assertEqual(
+            response.status_code,
+            200,
+            response.data,
+        )
+
+        results = self.results(response)
+
+        self.assertEqual(
+            [item["title"] for item in results],
+            [
+                "Alpha photograph",
+                "Zulu photograph",
+            ],
+        )
+
+        ids = {
+            item["id"]
+            for item in results
+        }
+
+        self.assertEqual(
+            ids,
+            {
+                str(alpha.pk),
+                str(zulu.pk),
+            },
+        )
+        self.assertNotIn(
+            str(no_expiry.pk),
+            ids,
+        )
+
+
+
+
 class CloudinaryServiceTests(TestCase):
     def test_validation_checks_bytes_not_extension(self):
         disguised_text = SimpleUploadedFile(
