@@ -359,6 +359,29 @@ class AssetSerializerTests(AssetFactoryMixin, TestCase):
         self.assertTrue(data["is_viewer_accessible"])
         self.assertEqual(data["public_id"], asset.public_id)
 
+    def test_representation_includes_allowed_actions(self):
+        asset = self.make_asset(
+            self.editor,
+            status=Asset.Status.DRAFT,
+        )
+
+        request = APIRequestFactory().get(f"/api/assets/{asset.pk}/")
+
+        request.user = self.editor
+
+        data = AssetSerializer(asset, context={"request": request}).data
+
+
+        self.assertEqual(
+            data["allowed_actions"],
+            [
+            "edit",
+            "submit",
+            "archive",
+            "download",
+            ],
+            )   
+
     def test_update_changes_relationships_and_creates_event(self):
         original_tag = Tag.objects.create(name="Road")
         replacement_tag = Tag.objects.create(name="Track")
