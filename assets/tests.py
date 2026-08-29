@@ -13,7 +13,11 @@ from django.db.models import Count
 from .serializers import AssetEventSerializer, AssetSerializer, CollectionSerializer, TagSerializer
 from rest_framework.test import APIRequestFactory, APITestCase
 from django.contrib.auth.models import AnonymousUser
-from .services import workflow_service  
+from .services import workflow_service, cloudinary_service
+
+from io import BytesIO
+from django.core.files.uploadedfile import SimpleUploadedFile
+from PIL import Image
 
 def cloudinary_response(number=1):
     """Dummy provider data without contacting Cloudinary."""
@@ -33,6 +37,20 @@ def cloudinary_response(number=1):
         "bytes": 23456,
         "version": number,
     }
+
+def image_upload(name="test_image.png", format="PNG", size=(100, 100), color=(255, 0, 0)):
+    """Create a simple in-memory image file for testing."""
+
+    image = Image.new("RGB", size, color)
+    byte_io = BytesIO()
+    image.save(byte_io, format=format)
+    byte_io.seek(0)
+
+    return SimpleUploadedFile(
+        name=name,
+        content=byte_io.read(),
+        content_type=f"image/{format.lower()}",
+    )
 
 class AssetFactoryMixin:
     asset_number = 0
