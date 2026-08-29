@@ -2,6 +2,7 @@
 
 from datetime import timedelta
 
+from django.conf.locale import de
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError, PermissionDenied
 from django.test import TestCase, override_settings, tag
@@ -809,7 +810,45 @@ class WorkflowAccessTests(AssetFactoryMixin, TestCase):
     )
 
 
+def test_request_changes_requires_reason(
+    self,
+):
+    asset = self.make_asset(
+        self.editor,
+        status=Asset.Status.IN_REVIEW,
+    )
 
+    with self.assertRaises(
+        workflow_service.WorkflowError
+    ):
+        workflow_service.request_changes(
+            asset,
+            self.admin,
+            "   ",
+        )
+
+        workflow_service.request_changes(
+            asset,  
+            self.admin,
+            "Add the photographer credit.",
+        )
+
+        asset.refresh_from_db()
+
+        self.assertEqual(
+            asset.status,
+            Asset.Status.CHANGES_REQUESTED,
+        )
+
+        self.assertIsNone(asset.approver)
+        self.assertIsNone(asset.approved_at)
+
+        event = asset.events.get(
+            action=AssetEvent.Action.CHANGES_REQUESTED
+        )   
+
+        self.assertEqual(event.actor, self.admin)
+        self.assertEqual(event.message, "Add the photographer credit.")
 
 class TaxonomyAPITests(AssetFactoryMixin, APITestCase):
     def setUp(self):
