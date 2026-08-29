@@ -4,7 +4,7 @@ from datetime import timedelta
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.utils import timezone
 from django.urls import reverse 
 
@@ -18,6 +18,7 @@ from .services import workflow_service, cloudinary_service
 from io import BytesIO
 from django.core.files.uploadedfile import SimpleUploadedFile
 from PIL import Image
+from unittest.mock import patch, 
 
 def cloudinary_response(number=1):
     """Dummy provider data without contacting Cloudinary."""
@@ -965,3 +966,11 @@ class CloudinaryServiceTests(TestCase):
             cloudinary_service.validate_image(
                 uploaded
             )
+
+    @override_settings(
+        CLOUDINARY_STORAGE={
+            "CLOUD_NAME": "course-cloud",
+            "API_KEY": "test-key",
+            "API_SECRET": "test-secret",
+        }
+        CLOUDINARY_URL="",)
