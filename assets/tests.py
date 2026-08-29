@@ -1106,4 +1106,21 @@ class CloudinaryServiceTests(TestCase):
             invalidate=True,
         )
 
-       
+    @patch(
+        "assets.services.cloudinary_service."
+        "cloudinary.uploader.destroy"
+    )
+    def test_destroy_does_not_mask_original_failure(
+    self,
+    mocked_destroy,
+    ):
+        mocked_destroy.side_effect = RuntimeError(
+            "Cleanup failed."
+        )
+
+        result = cloudinary_service.destroy_image(
+            "streamline/assets/public-1",
+            delivery_type="authenticated",
+        )
+
+        self.assertFalse(result)
