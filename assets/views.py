@@ -76,7 +76,7 @@ class AssetViewSet(viewsets.ModelViewSet):
     )
     pagination_class = AssetPagination
 
-    http_method_names = ["get", "head", "patch", "options"]
+    http_method_names = ["get", "post", "head", "patch", "options"]
 
     def get_queryset(self):
         """ Return a queryset of assets visible to the current user. """
