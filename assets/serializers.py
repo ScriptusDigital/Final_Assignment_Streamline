@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from.models import Asset, Collection, Tag, AssetEvent
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
-from .services import cloudinary_service
+from .services import cloudinary_service, workflow_service
 
 class UserSummarySerializer(serializers.ModelSerializer):
     display_name = serializers.SerializerMethodField()
@@ -77,7 +77,7 @@ class AssetSerializer(serializers.ModelSerializer):
     is_expired = serializers.BooleanField(read_only=True)
     is_viewer_accessible = serializers.BooleanField(read_only=True)
     file = serializers.FileField(write_only=True, required=True)
-
+    allowed_actions = serializers.SerializerMethodField()
 
     class Meta:
         model = Asset
@@ -119,6 +119,7 @@ class AssetSerializer(serializers.ModelSerializer):
             "updated_at",
             "is_expired",
             "is_viewer_accessible",
+            "allowed_actions",
         )
 
         read_only_fields = (
@@ -206,6 +207,20 @@ class AssetSerializer(serializers.ModelSerializer):
             ) from exc
 
         return instance
+
+    def get_allowed_actions(self, obj,
+    ) -> list[str]:
+        request = self.context.get("request")
+
+        if not request:
+            return []
+
+        return workflow_service.allowed_actions(
+            request.user,
+            obj,
+        )
+        
+                            
 
     def create(self, validated_data):
         uploaded_file = validated_data.pop("file", None)

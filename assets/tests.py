@@ -2,8 +2,9 @@
 
 from datetime import timedelta
 
+from django.conf.locale import de
 from django.contrib.auth import get_user_model
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, PermissionDenied
 from django.test import TestCase, override_settings, tag
 from django.utils import timezone
 from django.urls import reverse
@@ -358,6 +359,29 @@ class AssetSerializerTests(AssetFactoryMixin, TestCase):
         self.assertTrue(data["is_viewer_accessible"])
         self.assertEqual(data["public_id"], asset.public_id)
 
+    def test_representation_includes_allowed_actions(self):
+        asset = self.make_asset(
+            self.editor,
+            status=Asset.Status.DRAFT,
+        )
+
+        request = APIRequestFactory().get(f"/api/assets/{asset.pk}/")
+
+        request.user = self.editor
+
+        data = AssetSerializer(asset, context={"request": request}).data
+
+
+        self.assertEqual(
+            data["allowed_actions"],
+            [
+            "edit",
+            "submit",
+            "archive",
+            "download",
+            ],
+            )   
+
     def test_update_changes_relationships_and_creates_event(self):
         original_tag = Tag.objects.create(name="Road")
         replacement_tag = Tag.objects.create(name="Track")
@@ -672,6 +696,332 @@ class WorkflowAccessTests(AssetFactoryMixin, TestCase):
             )
         )
 
+
+    def test_required_metadata_identifies_submission_gaps(
+    self,
+):
+        asset = self.make_asset(
+            self.editor,
+            status=Asset.Status.DRAFT,
+            title="",
+            alt_text="",
+            photographer_credit="",
+            rights_status=(
+                Asset.RightsStatus.UNKNOWN
+            ),
+)
+
+        self.assertCountEqual(
+            workflow_service._required_metadata(asset),
+            [
+                "title",
+                "alt text",
+                "photographer credit",
+                "rights status",
+            ],
+        )
+        asset.title ="Submission draft"
+
+        asset.alt_text = (
+            "A runner crosses the finish line"
+        )
+        asset.photographer_credit = (
+            "Course Photographer"
+        )
+        asset.rights_status = (
+            Asset.RightsStatus.CLEARED
+        )
+
+        self.assertEqual(
+            workflow_service._required_metadata(
+                asset
+            ),
+            [],
+        )
+
+
+    def test_submit_requires_metadata_and_creates_event(
+    self,
+):
+        asset = self.make_asset(
+            self.editor,
+            status=Asset.Status.DRAFT,
+            alt_text="",
+        )
+
+        with self.assertRaises(
+            workflow_service.WorkflowError
+        ):
+            workflow_service.submit(
+                asset,
+                self.editor,
+                )
+
+        asset.alt_text = (
+            "A runner crosses the finish line"
+        )
+
+        asset.save(
+            update_fields=["alt_text"]
+        )
+
+        workflow_service.submit(
+            asset,
+            self.editor,
+        )
+
+        asset.refresh_from_db()
+
+        self.assertEqual(
+            asset.status,
+            Asset.Status.IN_REVIEW,
+        )
+
+        event = asset.events.get(
+            action=AssetEvent.Action.SUBMITTED
+        )
+
+        self.assertEqual(event.actor, self.editor)
+        self.assertEqual(
+            event.from_status,
+            Asset.Status.DRAFT,
+        )
+
+        self.assertEqual(
+            event.to_status,
+            Asset.Status.IN_REVIEW,
+        )
+
+    def test_only_admin_can_approve_asset_in_review(
+    self,
+):
+        asset = self.make_asset(
+            self.editor,
+            status=Asset.Status.IN_REVIEW,
+        )
+
+        with self.assertRaises(PermissionDenied):
+            workflow_service.approve(
+                asset,
+                self.editor,
+            )
+
+        workflow_service.approve(
+            asset,
+            self.admin,
+        )
+
+        asset.refresh_from_db()
+
+        self.assertEqual(
+            asset.status,
+            Asset.Status.APPROVED,
+        )
+
+        self.assertEqual(
+            asset.approver,
+            self.admin,
+        )
+
+        self.assertIsNotNone(asset.approved_at)
+
+        self.assertTrue(
+        asset.events.filter(
+            action=AssetEvent.Action.APPROVED,
+            actor=self.admin,
+        ).exists()
+    )
+
+
+    def test_request_changes_requires_reason(
+        self,
+    ):
+        asset = self.make_asset(
+            self.editor,
+            status=Asset.Status.IN_REVIEW,
+        )
+
+        with self.assertRaises(
+            workflow_service.WorkflowError
+        ):
+            workflow_service.request_changes(
+                asset,
+                self.admin,
+                "   ",
+            )
+
+        workflow_service.request_changes(
+            asset,
+            self.admin,
+            "Add the photographer credit.",
+        )
+
+        asset.refresh_from_db()
+
+        self.assertEqual(
+            asset.status,
+            Asset.Status.CHANGES_REQUESTED,
+        )
+        self.assertIsNone(asset.approver)
+        self.assertIsNone(asset.approved_at)
+
+        event = asset.events.get(
+            action=(
+                AssetEvent.Action.CHANGES_REQUESTED
+            )
+        )
+
+        self.assertEqual(
+            event.actor,
+            self.admin,
+        )
+        self.assertEqual(
+            event.message,
+            "Add the photographer credit.",
+        )
+
+    def test_editor_can_archive_only_own_draft(self):
+        own_draft = self.make_asset(
+            self.editor,
+            status=Asset.Status.DRAFT,
+        )
+        other_draft = self.make_asset(
+            self.other_editor,
+            status=Asset.Status.DRAFT,
+        )
+
+        with self.assertRaises(PermissionDenied):
+            workflow_service.archive(
+                other_draft,
+                self.editor,
+            )
+
+        workflow_service.archive(
+            own_draft,
+            self.editor,
+            "Duplicate image.",
+        )
+
+        own_draft.refresh_from_db()
+
+        self.assertEqual(
+            own_draft.status,
+            Asset.Status.ARCHIVED,
+        )
+        self.assertIsNotNone(
+            own_draft.archived_at
+        )
+
+        event = own_draft.events.get(
+            action=AssetEvent.Action.ARCHIVED
+        )
+
+        self.assertEqual(
+            event.actor,
+            self.editor,
+        )
+        self.assertEqual(
+            event.message,
+            "Duplicate image.",
+        )
+        self.assertEqual(
+            event.metadata["previous_status"],
+            Asset.Status.DRAFT,
+        )
+
+    def test_only_admin_can_restore_archived_asset(self):
+        asset = self.make_asset(
+            self.editor,
+            status=Asset.Status.CHANGES_REQUESTED,
+        )
+
+        workflow_service.archive(
+            asset, 
+            self.editor,   
+        )
+
+        with self.assertRaises(PermissionDenied):
+            workflow_service.restore(
+                asset,
+                self.editor,
+            )
+
+        workflow_service.restore(
+            asset,
+            self.admin,
+        )
+
+        asset.refresh_from_db()
+
+        self.assertEqual(
+            asset.status,
+            Asset.Status.CHANGES_REQUESTED,
+        )
+
+        self.assertIsNone(asset.archived_at)
+
+        event = asset.events.get(
+            action=AssetEvent.Action.RESTORED
+        )
+
+        self.assertEqual(event.actor, self.admin)
+        self.assertEqual(
+            event.from_status,
+            Asset.Status.ARCHIVED,
+        )
+        self.assertEqual(
+            event.to_status,
+            Asset.Status.CHANGES_REQUESTED,
+        )   
+
+
+    def test_allowed_actions_follow_role_and_status(self):
+        asset = self.make_asset(
+            self.editor,
+            status=Asset.Status.IN_REVIEW,
+        )
+
+        admin_actions = workflow_service.allowed_actions(
+            self.admin,
+            asset,
+        )
+
+        editor_actions = workflow_service.allowed_actions(
+            self.editor,
+            asset,
+        )
+
+        viewer_actions = workflow_service.allowed_actions(
+            self.viewer,
+            asset,
+        )
+
+        self.assertIn("approve", admin_actions)
+        self.assertIn("request_changes", admin_actions)
+        self.assertIn("archive", admin_actions)
+        self.assertIn("download", admin_actions)
+
+        self.assertEqual(
+            editor_actions,
+            ["download"],
+        )
+
+        self.assertEqual(
+            viewer_actions, [])
+
+        workflow_service.archive(
+            asset,
+            self.admin,
+        )
+
+        archived_actions = (workflow_service.allowed_actions(
+            self.admin,
+            asset,
+        )
+        )
+
+        self.assertIn("restore", archived_actions)
+        self.assertNotIn("download", archived_actions)
 
 class TaxonomyAPITests(AssetFactoryMixin, APITestCase):
     def setUp(self):
@@ -1403,6 +1753,291 @@ class AssetAPITests(AssetFactoryMixin, APITestCase):
             ids,
         )
 
+    def test_editor_and_admin_complete_asset_workflow(
+        self,
+    ):
+        asset = self.make_asset(
+            self.editor,
+            status=Asset.Status.DRAFT,
+        )
+
+        self.client.force_authenticate(
+            self.editor
+        )
+        submitted = self.client.post(
+            reverse("asset-submit", args=[asset.pk]),
+            {},
+            format="json",
+        )
+
+        self.assertEqual(
+            submitted.status_code,
+            200,
+            submitted.data,
+        )
+
+        self.assertEqual(
+            submitted.data["status"],
+            Asset.Status.IN_REVIEW,
+        )
+
+        denied_approval = self.client.post(
+            reverse("asset-approve", args=[asset.pk]),
+            {},
+            format="json",
+        )   
+
+        self.assertEqual(
+            denied_approval.status_code,
+            403,
+        )
+
+        self.client.force_authenticate(
+            self.admin
+        )
+
+        changes_requested = self.client.post(
+            reverse("asset-request-changes", args=[asset.pk],),
+{
+                "reason": (
+                    "Please confirm the image credit."
+                )
+            },
+            format="json",
+        )
+
+
+        self.assertEqual(
+            changes_requested.status_code,
+            200,
+            changes_requested.data,
+        )
+
+        self.assertEqual(
+            changes_requested.data["status"],
+            Asset.Status.CHANGES_REQUESTED,
+        )   
+
+        self.client.force_authenticate(
+            self.editor
+        )
+
+        resubmitted = self.client.post(
+            reverse("asset-submit", args=[asset.pk]),
+            {},
+            format="json",
+        )
+
+        self.assertEqual(
+            resubmitted.status_code,
+            200,
+            resubmitted.data,
+        )
+
+        self.client.force_authenticate(
+            self.admin
+        )
+
+        approved = self.client.post(
+            reverse("asset-approve", args=[asset.pk]),
+            {},
+            format="json",
+        )   
+
+        self.assertEqual(
+            approved.status_code,
+            200,
+            approved.data,
+        )   
+
+
+        self.assertEqual(
+            approved.data["status"],
+            Asset.Status.APPROVED,
+        )
+
+        archived = self.client.post(
+            reverse(
+                "asset-archive",
+                args=[asset.pk],
+            ),
+            {
+                "reason": "Campaign completed.",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            archived.status_code,
+            200,
+            archived.data,
+        )
+
+        self.assertEqual(
+            archived.data["status"],
+            Asset.Status.ARCHIVED,
+        )
+
+        restored = self.client.post(
+            reverse(
+                "asset-restore",
+                args=[asset.pk],
+            ),
+            {},
+            format="json",
+        )   
+
+        self.assertEqual(
+            restored.status_code,
+            200,
+            restored.data,
+        )
+
+        self.assertEqual(
+            restored.data["status"],
+            Asset.Status.DRAFT,
+        )
+
+        asset.refresh_from_db()
+
+        self.assertIsNone(asset.archived_at)
+
+
+        self.assertCountEqual(
+            asset.events.values_list("action", flat=True),
+            [
+                AssetEvent.Action.SUBMITTED,
+                AssetEvent.Action.CHANGES_REQUESTED,
+                AssetEvent.Action.SUBMITTED,
+                AssetEvent.Action.APPROVED,
+                AssetEvent.Action.ARCHIVED,
+                AssetEvent.Action.RESTORED,
+            ],
+        )
+
+    def test_audit_history_and_delete_protection(
+        self,
+    ):
+        asset = self.make_asset(
+            self.editor,
+            status=Asset.Status.APPROVED,
+            approver=self.admin,
+            approved_at=timezone.now(),
+        )
+
+        AssetEvent.objects.create(
+            asset=asset,
+            actor=self.editor,
+            action=AssetEvent.Action.CREATED,
+            from_status="",
+            to_status=Asset.Status.DRAFT,
+        )
+
+        self.client.force_authenticate(
+            self.viewer
+        )
+
+
+        viewer_history = self.client.get(
+            reverse("asset-events", args=[asset.pk])
+        )
+
+        self.assertEqual(
+            viewer_history.status_code,
+            403,        
+        )
+
+        self.client.force_authenticate(
+            self.admin
+        )
+
+        admin_history = self.client.get(
+            reverse("asset-events", args=[asset.pk])
+        )   
+
+        self.assertEqual(
+            admin_history.status_code,
+            200,
+            admin_history.data,
+        )
+
+        self.assertEqual(
+            admin_history.data[0]["action"],
+            AssetEvent.Action.CREATED,
+        )
+
+        deletion = self.client.delete(
+            reverse("asset-detail", args=[asset.pk])
+        )   
+
+        self.assertEqual(
+            deletion.status_code,
+            405,   
+        )
+
+        self.assertTrue(
+            Asset.objects.filter(pk=asset.pk).exists()
+        )   
+
+
+    @patch(
+        "assets.views.cloudinary_service."
+        "signed_download_url"
+    )
+    def test_secure_download_is_recorded(
+        self,
+        mocked_signed_download,
+    ):
+        asset = self.make_asset(
+            self.editor,
+            status=Asset.Status.APPROVED,
+            approver=self.admin,
+            approved_at=timezone.now(),
+        )
+
+        mocked_signed_download.return_value = (
+            cloudinary_service.SignedDownload(
+                url=(
+                    "https://example.test/"
+                    "temporary-download"
+                ),
+                expires_at=(
+                    timezone.now()
+                    + timedelta(minutes=5)
+                ),
+            )
+        )
+
+        self.client.force_authenticate(
+            self.viewer
+        )
+
+        response = self.client.get(
+            reverse("asset-download", args=[asset.pk])
+        )   
+
+        self.assertEqual(
+            response.status_code,
+            200,
+            response.data,
+        )
+
+        self.assertEqual(
+            response.data["url"],  
+            (
+                "https://example.test/"
+                "temporary-download"
+            ),
+        )
+
+        mocked_signed_download.assert_called_once_with(asset)
+
+        self.assertTrue(
+            asset.events.filter(
+                action=AssetEvent.Action.DOWNLOADED,
+                actor=self.viewer,
+            ).exists()
+        )
 
 
 
