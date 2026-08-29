@@ -857,6 +857,56 @@ class WorkflowAccessTests(AssetFactoryMixin, TestCase):
             "Add the photographer credit.",
         )
 
+    def test_editor_can_archive_only_own_draft(self):
+        own_draft = self.make_asset(
+            self.editor,
+            status=Asset.Status.DRAFT,
+        )
+        other_draft = self.make_asset(
+            self.other_editor,
+            status=Asset.Status.DRAFT,
+        )
+
+        with self.assertRaises(PermissionDenied):
+            workflow_service.archive(
+                other_draft,
+                self.editor,
+            )
+
+        workflow_service.archive(
+            own_draft,
+            self.editor,
+            "Duplicate image.",
+        )
+
+        own_draft.refresh_from_db()
+
+        self.assertEqual(
+            own_draft.status,
+            Asset.Status.ARCHIVED,
+        )
+        self.assertIsNotNone(
+            own_draft.archived_at
+        )
+
+        event = own_draft.events.get(
+            action=AssetEvent.Action.ARCHIVED
+        )
+
+        self.assertEqual(
+            event.actor,
+            self.editor,
+        )
+        self.assertEqual(
+            event.message,
+            "Duplicate image.",
+        )
+        self.assertEqual(
+            event.metadata["previous_status"],
+            Asset.Status.DRAFT,
+        )
+
+
 class TaxonomyAPITests(AssetFactoryMixin, APITestCase):
     def setUp(self):
         User = get_user_model()

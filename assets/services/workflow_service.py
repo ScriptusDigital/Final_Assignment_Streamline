@@ -184,7 +184,7 @@ def submit(
 
     previous_status = asset.status
     asset.status = Asset.Status.IN_REVIEW
-    asset.approved_at = None
+    asset.approver = None
     asset.approved_at = None
 
     asset.save(update_fields=(
@@ -201,6 +201,8 @@ def submit(
         from_status=previous_status,
         to_status=asset.status,
     )
+
+    return asset
 
 @transaction.atomic
 def approve(
@@ -319,6 +321,43 @@ def request_changes(
         from_status=previous_status,
         to_status=asset.status,
         message=reason,
+    )
+
+    return asset
+
+@transaction.atomic
+def archive(
+    asset: Asset,
+    actor,
+    reason: str = "",
+) -> Asset:
+    """Archive an asset and record its previous status."""
+
+    _assert_action(actor, asset, "archive")
+
+    previous_status = asset.status
+
+    asset.status = Asset.Status.ARCHIVED
+    asset.archived_at = timezone.now()
+
+    asset.save(
+        update_fields=(
+            "status",
+            "archived_at",
+            "updated_at",
+        )
+    )
+
+    AssetEvent.objects.create(
+        asset=asset,
+        actor=actor,
+        action=AssetEvent.Action.ARCHIVED,
+        from_status=previous_status,
+        to_status=asset.status,
+        message=(reason or "").strip(),
+        metadata={
+            "previous_status": previous_status,
+        },
     )
 
     return asset
