@@ -44,6 +44,23 @@ def can_view(user, asset: Asset) -> bool:
 
   return asset.is_viewer_accessible
 
+def can_download(user, asset: Asset) -> bool:
+   """ Returns whether the user can download the asset. """
+
+   if asset.status == Asset.Status.ARCHIVED:
+       return False
+
+   if is_admin(user):
+       return True
+
+   if (
+       is_editor(user)
+       and asset.uploader_id == user.pk
+   ):
+       return True      
+
+   return asset.is_viewer_accessible
+
 def _required_metadata(
       asset: Asset,         
 )  -> list[str]:
