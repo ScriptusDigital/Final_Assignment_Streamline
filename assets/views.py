@@ -2,7 +2,7 @@
 
 from django.db.models import Count, Q
 from django.utils import timezone
-from rest_framework import viewsets
+from rest_framework import viewsets, serializers
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 
@@ -20,6 +20,11 @@ from .filters import AssetFilter
 
 from django.contrib.postgres.search import (SearchVector, SearchQuery, SearchRank)
 from django.db import connection
+from django.core.exceptions import (PermissionDenied as DjangoPermissionDenied)
+from django.core.exceptions import (ValidationError as DjangoValidationError)
+from rest_framework.decorators import action
+
+
 
 class AssetPagination(PageNumberPagination):
     """ Custom pagination class for Asset model. """
@@ -96,6 +101,8 @@ class AssetViewSet(viewsets.ModelViewSet):
  
 
     http_method_names = ["get", "post", "head", "patch", "options"]
+
+
 
     def get_queryset(self):
         """Return viewable assets for the current user, with related fields preloaded."""
@@ -195,6 +202,41 @@ class AssetViewSet(viewsets.ModelViewSet):
             )
             | Q(notes__icontains=query)
         ).distinct()
+
+    def _work_flow_ (
+            self,
+            operation, 
+            *operation_args,
+    ):
+        """ Run a workflow operation on the asset, handling exceptions and returning a response."""
+        asset = self.get_object()
+
+        try:
+            operation(asset, self.request.user, *operation_args)
+
+        except DjangoPermissionDenied as exc:
+            from rest_framework.exceptions import (PermissionDenied,)
+            raise PermissionDenied(detail=str(exc))
+        except DjangoValidationError as exc:
+            detail = (
+                getattr(exc, "message_dict", None)
+                or getattr(exc, "messages", None)
+                or str(exc)
+            )
+
+            raise serializers.ValidationError(detail) from exc
+
+            asset.refresh_from_db()
+
+            return Response(
+                self.get_serializer(asset).data
+            )
+    @action(detail=True, methods=["post"])
+    def submit(self, request, *args, **kwargs):
+
+       return self._work_flow_response(
+           workflow_service.submit
+         )
 
 class DashboardView(APIView):
     """ API view for the dashboard, providing counts of assets by status. """
