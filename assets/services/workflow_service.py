@@ -71,15 +71,19 @@ def _required_metadata(
     return missing  
 
 
-def _assert_action (
-        user,
-        asset: Asset,
-        action: str,
+
+def _assert_action(
+    user,
+    asset: Asset,
+    action: str,
 ) -> None:
-    """ Check role, ownership and current state. """
+    """Check role, ownership and current state."""
 
     role = user_role(user)
-    owns_asset = asset.uploader_id == getattr(user, "pk", None)
+    owns_asset = (
+        asset.uploader_id
+        == getattr(user, "pk", None)
+    )
 
     if action == "submit":
         if (
@@ -101,36 +105,63 @@ def _assert_action (
                 "status": (
                     "Only drafts or revisions "
                     "can be submitted."
-                ),
+                )
             })
 
         return
 
     if action in (
-            "approve", 
-            "request_changes"
+        "approve",
+        "request_changes",
     ):
         if role != "admin":
-            readable_action = action.replace(
-                "_", 
-                " "
-                )
+            readable_action = action.replace("_", " ")
 
             raise PermissionDenied(
-                    "Only an administrator can "
-                    f"{readable_action} an asset."
+                "Only an administrator can "
+                f"{readable_action} an asset."
             )
 
         if asset.status != Asset.Status.IN_REVIEW:
             raise WorkflowError({
                 "status": (
                     "The asset must be in review."
-                ),
+                )
             })
+
+        return
+
+    if action == "archive":
+        if role == "admin":
+            if asset.status == Asset.Status.ARCHIVED:
+                raise WorkflowError({
+                    "status": (
+                        "The asset is already archived."
+                    )
+                })
+
+            return
+
+        if role != "editor" or not owns_asset:
+            raise PermissionDenied(
+                "You cannot archive this asset."
+            )
+
+        if asset.status not in (
+            Asset.Status.DRAFT,
+            Asset.Status.CHANGES_REQUESTED,
+        ):
+            raise WorkflowError({
+                "status": (
+                    "Editors may archive only their "
+                    "own drafts or revisions."
+                )
+            })
+
         return
 
     raise WorkflowError({
-        "action": "Unknown workflow action.", 
+        "action": "Unknown workflow action.",
     })
 
 @transaction.atomic
@@ -253,6 +284,7 @@ def request_changes(
 ) -> Asset:
     """Return an asset to its editor for revision."""
 
+
     _assert_action(
         actor,
         asset,
@@ -263,9 +295,7 @@ def request_changes(
 
     if not reason:
         raise WorkflowError({
-            "reason": (
-                "Explain why the asset needs changes."
-            ),
+            "reason": "Explain the changes required.",
         })
 
     previous_status = asset.status
