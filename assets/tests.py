@@ -679,11 +679,13 @@ class WorkflowAccessTests(AssetFactoryMixin, TestCase):
         asset = self.make_asset(
             self.editor,
             status=Asset.Status.DRAFT,
+            title="",
             alt_text="",
             photographer_credit="",
-            rights_status=(Asset.RightsStatus.UNKNOWN
-        ),
-        )
+            rights_status=(
+                Asset.RightsStatus.UNKNOWN
+            ),
+)
 
         self.assertCountEqual(
             workflow_service._required_metadata(asset),
@@ -694,7 +696,8 @@ class WorkflowAccessTests(AssetFactoryMixin, TestCase):
                 "rights status",
             ],
         )
-
+        asset.title ="Submission draft"
+        
         asset.alt_text = (
             "A runner crosses the finish line"
         )
