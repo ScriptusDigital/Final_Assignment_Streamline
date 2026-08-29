@@ -1,11 +1,12 @@
 """Cloudinary service module for handling image uploads and transformations."""
 from __future__ import annotations
+
 from PIL import Image, UnidentifiedImageError
 
 
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 
-ALLOWED_PILLOW_FORMATS = {
+ALLOWED_PIL_FORMATS = {
     "JPEG": "JPEG",
     "PNG": "PNG",
     "GIF": "GIF",
@@ -18,7 +19,7 @@ class ImageValidationError(ValueError):
     """The uploaded image is not valid or is in an unsupported format."""
 
 def validate_image(uploaded_file) -> str:
-    """Inspect the file bytes and return the image format if valid, otherwise raise an ImageValidationError."""
+    """Inspect the actual file bytes and return its image format."""
 
     size = getattr(uploaded_file, "size", None)
 
@@ -46,7 +47,7 @@ def validate_image(uploaded_file) -> str:
                 image.format or ""
             ).upper()
 
-            if image_format not in ALLOWED_PILLOW_FORMATS:
+            if image_format not in ALLOWED_PIL_FORMATS:
                 raise ImageValidationError(
                     "Only JPEG, PNG and WebP images are supported."
                 )
@@ -70,4 +71,3 @@ def validate_image(uploaded_file) -> str:
         uploaded_file.seek(0)
 
     return image_format.lower()
-
