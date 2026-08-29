@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 from assets.models import Asset
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, PermissionDenied
+from django.db import transaction
+from assets.models import Asset, AssetEvent
+
 
 class WorkflowError(ValidationError):
     """The requested workflow transition is invalid."""
@@ -67,3 +70,43 @@ def _required_metadata(
         missing.append("rights status")
 
     return missing  
+
+
+def _assert_action (
+        user,
+        asset: Asset,
+        action: str,
+) -> None:
+    """ Check role, ownership and current state. """
+
+    role = user_role(user)
+    owns_asset = asset.uploader_id == getattr(user, "pk", None)
+
+    if action == "submit":
+        if (
+            role not in ("editor", "admin")
+            or (
+                role == "editor"
+                and not owns_asset
+            )
+        ):
+            raise PermissionDenied(
+                "You cannot submit this asset."
+            )
+
+        if asset.status not in (
+            Asset.Status.DRAFT,
+            Asset.Status.CHANGES_REQUESTED,
+        ):
+            raise WorkflowError({
+                "status": (
+                    "Only drafts or revisions "
+                    "can be submitted."
+                ),
+            })
+
+        return
+
+    raise WorkflowError({
+        "action": "Unknown workflow action.", 
+    })
