@@ -19,7 +19,7 @@ from rest_framework.filters import OrderingFilter
 from .filters import AssetFilter
 
 from django.contrib.postgres.search import (SearchVector, SearchQuery, SearchRank)
-from django.db.models import connection
+from django.db import connection
 
 class AssetPagination(PageNumberPagination):
     """ Custom pagination class for Asset model. """
