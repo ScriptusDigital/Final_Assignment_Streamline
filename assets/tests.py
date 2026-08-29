@@ -1230,6 +1230,46 @@ class AssetAPITests(AssetFactoryMixin, APITestCase):
             {str(matching.pk)},
         )
 
+    def test_search_cannot_reveal_hidden_assets(
+    self,
+):
+        hidden = self.make_asset(
+            self.editor,
+            status=Asset.Status.DRAFT,
+            title="Confidential rowing plans"
+        )
+
+        self.client.force_authenticate(
+            self.viewer
+        )
+
+        response = self.client.get(
+            reverse("asset-list"),
+            {
+                "q": "rowing",
+            },
+        )
+
+        self.assertEqual(
+            response.status_code,
+            200,
+            response.data,
+        )
+
+        ids = {
+            item["id"]
+            for item in self.results(response)
+        }
+
+        self.assertNotIn(
+            str(hidden.pk),
+            ids,
+        )
+        self.assertEqual(
+            ids,
+            set(),
+        )
+
 class CloudinaryServiceTests(TestCase):
     def test_validation_checks_bytes_not_extension(self):
         disguised_text = SimpleUploadedFile(
