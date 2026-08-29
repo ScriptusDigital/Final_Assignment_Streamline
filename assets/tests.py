@@ -1054,59 +1054,59 @@ class AssetAPITests(AssetFactoryMixin, APITestCase):
             str(approved_asset.pk),
         )
 
-@patch(
-        "assets.serializers."
-    "cloudinary_service.upload_image"
-)
-
-def test_editor_can_upload_asset(
-    self,
-    mocked_upload,  
-):
-    mocked_upload.return_value = cloudinary_response(700)
-
-    tag = Tag.objects.create(name="Athletics Upload")
-
-    self.client.force_authenticate(self.editor)
-
-    response = self.client.post(
-        reverse("asset-list"),
-        {   
-            "file": image_upload(),
-            "title": "Track final",
-            "alt_text": (
-                "Athletes run around a track"
-            ),
-            "photographer_credit": (
-                "Course Student"
-            ),
-            "rights_status": (
-                Asset.RightsStatus.CLEARED
-            ),
-            "permitted_use": (
-                Asset.PermittedUse.EDITORIAL
-            ),
-            "tag_ids": [tag.pk],
-        },
-        format="multipart",
+    @patch(
+            "assets.serializers."
+        "cloudinary_service.upload_image"
     )
 
-    self.assertEqual(response.status_code, 201, response.data)
-    asset = Asset.objects.get(pk=response.data["id"])
-    self.assertEqual(asset.uploader, self.editor)
-    self.assertEqual(
-        asset.public_id,
-        "streamline/assets/public-700",
-    )       
-    self.assertEqual(
-        list(asset.tags.all()),
-        [tag],
-    )
-    self.assertTrue(
-        asset.events.filter(
-            action=AssetEvent.Action.CREATED
-        ).exists()
-    )   
+    def test_editor_can_upload_asset(
+        self,
+        mocked_upload,  
+    ):
+        mocked_upload.return_value = cloudinary_response(700)
+
+        tag = Tag.objects.create(name="Athletics Upload")
+
+        self.client.force_authenticate(self.editor)
+
+        response = self.client.post(
+            reverse("asset-list"),
+            {   
+                "file": image_upload(),
+                "title": "Track final",
+                "alt_text": (
+                    "Athletes run around a track"
+                ),
+                "photographer_credit": (
+                    "Course Student"
+                ),
+                "rights_status": (
+                    Asset.RightsStatus.CLEARED
+                ),
+                "permitted_use": (
+                    Asset.PermittedUse.EDITORIAL
+                ),
+                "tag_ids": [tag.pk],
+            },
+            format="multipart",
+        )
+
+        self.assertEqual(response.status_code, 201, response.data)
+        asset = Asset.objects.get(pk=response.data["id"])
+        self.assertEqual(asset.uploader, self.editor)
+        self.assertEqual(
+            asset.public_id,
+            "streamline/assets/public-700",
+        )       
+        self.assertEqual(
+            list(asset.tags.all()),
+            [tag],
+        )
+        self.assertTrue(
+            asset.events.filter(
+                action=AssetEvent.Action.CREATED
+            ).exists()
+        )   
 
 
 class CloudinaryServiceTests(TestCase):
