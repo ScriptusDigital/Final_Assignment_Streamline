@@ -921,41 +921,47 @@ class AssetAPITests(AssetFactoryMixin, APITestCase):
         )
 
 class CloudinaryServiceTests(TestCase):
-    def test_validate_image_accepts_valid_image(self):
-        uploaded_file = image_upload(
-            name="valid.png",
-            image_format="PNG",
+    def test_validation_checks_bytes_not_extension(self):
+        disguised_text = SimpleUploadedFile(
+            "looks-valid.jpg",
+            b"this is not an image",
+            content_type="image/jpeg",
         )
 
-        format_detected = cloudinary_service.validate_image(
-            uploaded_file
-        )
-
-        self.assertEqual(format_detected, "PNG")
-
-        with self.assertRaises(cloudinary_service.ImageValidationError):
-            invalid_file = SimpleUploadedFile(
-                "not_an_image.txt",
-                b"This is not an image.",
-                content_type="text/plain",
+        with self.assertRaisesRegex(
+            cloudinary_service.ImageValidationError,
+            "not a valid image",
+        ):
+            cloudinary_service.validate_image(
+                disguised_text
             )
-            cloudinary_service.validate_image(invalid_file)     
 
-            def test_validate_image_rejects_large_image(self):
-                large_file = SimpleUploadedFile(
-                    "large_image.png",
-                    b"\x00" * (cloudinary_service.MAX_UPLOAD_BYTES + 1),
-                    content_type="image/png",
-                )
+    def test_validation_accepts_image_and_rewinds_file(self):
+        uploaded = image_upload()
 
-                with self.assertRaises(cloudinary_service.ImageValidationError):
-                    cloudinary_service.validate_image(large_file)   
+        image_format = (
+            cloudinary_service.validate_image(
+                uploaded
+            )
+        )
 
-            def test_validate_image_rejects_unsupported_format(self):
-                unsupported_file = image_upload(
-                    name="unsupported.bmp",
-                    image_format="BMP",
-                )
+        self.assertEqual(image_format, "png")
+        self.assertEqual(uploaded.tell(), 0)
 
-                with self.assertRaises(cloudinary_service.ImageValidationError):
-                    cloudinary_service.validate_image(unsupported_file)     
+    def test_validation_rejects_files_over_ten_megabytes(self):
+        uploaded = SimpleUploadedFile(
+            "large.png",
+            b"small placeholder",
+            content_type="image/png",
+        )
+        uploaded.size = (
+            cloudinary_service.MAX_UPLOAD_BYTES + 1
+        )
+
+        with self.assertRaisesRegex(
+            cloudinary_service.ImageValidationError,
+            "10 MB",
+        ):
+            cloudinary_service.validate_image(
+                uploaded
+            )
