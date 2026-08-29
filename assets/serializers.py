@@ -215,7 +215,7 @@ class AssetSerializer(serializers.ModelSerializer):
         if not request:
             return []
 
-        return workflow_service.get_allowed_actions(
+        return workflow_service.allowed_actions(
             request.user,
             obj
         )
