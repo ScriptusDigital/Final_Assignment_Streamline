@@ -10,7 +10,7 @@ from .models import Asset, AssetEvent, Collection, Tag
 from .permissions import AssetPermission, TaxonomyPermission
 from .serializers import (AssetEventSerializer, AssetSerializer,CollectionSerializer,TagSerializer, DashboardSerializer
 )
-from .services import workflow_service
+from .services import workflow_service, cloudinary_service
 from datetime import timedelta
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -322,39 +322,88 @@ class AssetViewSet(viewsets.ModelViewSet):
         detail=True,
         methods=("get",),
     )
-
     def events(
         self,
         request,
         *args,
         **kwargs,
     ):
-       """Return the asset's workflow history."""
+        """Return the asset's workflow history."""
 
-       asset = self.get_object()
+        asset = self.get_object()
 
-       if (
-           workflow_service.user_role(request.user)
-           == "viewer"
-       ):
+        if (
+            workflow_service.user_role(request.user)
+            == "viewer"
+        ):
+            from rest_framework.exceptions import (
+                PermissionDenied,
+            )
 
-           from rest_framework.exceptions import (
-               PermissionDenied,
-           )    
+            raise PermissionDenied(
+                "Audit history is not available for viewers."
+            )
 
-           raise PermissionDenied(
-               """ Audit history is not available for viewers. """
-           )
+        events = asset.events.select_related("actor")
 
-       events = (
-          asset.events.select_related("actor")
-       )
+        serializer = AssetEventSerializer(
+            events,
+            many=True,
+        )
 
-       serializer = AssetEventSerializer(
-           events,
-           many=True,)
+        return Response(serializer.data)
 
-       return Response(serializer.data)
+    @action(
+        detail=True,
+        methods=("get",),
+    )
+    def download(
+        self,
+        request,
+        *args,
+        **kwargs,
+    ):
+        """Return a temporary secure download URL."""
+
+        asset = self.get_object()
+
+        if not workflow_service.can_download(
+            request.user,
+            asset,
+        ):
+            from rest_framework.exceptions import (
+                PermissionDenied,
+            )
+
+            raise PermissionDenied(
+                "This asset is not available for "
+                "download."
+            )
+
+        try:
+            signed = cloudinary_service.signed_download_url(asset)
+        except cloudinary_service.CloudinaryUploadError as exc:
+            from rest_framework.exceptions import (
+                APIException,
+            )
+
+            raise APIException(
+                "A secure download link could not "
+                "be created."
+            ) from exc
+
+        AssetEvent.objects.create(
+            asset=asset,
+            actor=request.user,
+            action=AssetEvent.Action.DOWNLOADED,
+            from_status=asset.status,
+            to_status=asset.status,
+        )
+
+        return Response({
+            "url": signed.url,
+            "expires_at": signed.expires_at,
+        })
 
 class DashboardView(APIView):
     """ API view for the dashboard, providing counts of assets by status. """
