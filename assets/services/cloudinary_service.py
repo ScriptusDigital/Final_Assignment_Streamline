@@ -156,7 +156,24 @@ def upload_image(uploaded_file) -> dict:
         "bytes": response["bytes"],
         "version": response.get("version"),
     }
-    
+
+def destroy_image(public_id: str, *, delivery_type: str = "authenticated") -> None:
+    """Delete an image from Cloudinary using its public ID."""
+
+    try:
+        _configure_cloudinary()
+
+        cloudinary.uploader.destroy(
+            public_id,
+            resource_type="image",
+            type=delivery_type,
+            invalidate=True,
+        )
+
+    except Exception:
+        return
+
+
 def _configure_cloudinary() -> None:
     """ Load server-side Cloudinary configuration from Django settings. """
 
