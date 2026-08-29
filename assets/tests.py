@@ -697,7 +697,7 @@ class WorkflowAccessTests(AssetFactoryMixin, TestCase):
             ],
         )
         asset.title ="Submission draft"
-        
+
         asset.alt_text = (
             "A runner crosses the finish line"
         )
@@ -715,6 +715,60 @@ class WorkflowAccessTests(AssetFactoryMixin, TestCase):
             [],
         )
 
+
+    def test_submit_requires_metadata_and_creates_event(
+    self,
+):
+        asset = self.make_asset(
+            self.editor,
+            status=Asset.Status.DRAFT,
+            alt_text="",
+            ),
+
+        with self.assertRaises(
+            workflow_service.WorkflowError
+        ):
+            workflow_service.submit(
+                asset,
+                self.editor,
+                )
+
+        asset.alt_text = (
+            "A runner crosses the finish line"
+        )
+
+        asset.save(
+            update_fields=["alt_text"]
+        )
+
+        workflow_service.submit(
+            asset,
+            self.editor,
+        )
+
+        asset.refresh_from_db()
+
+        self.assertEqual(
+            asset.status,
+            Asset.Status.IN_REVIEW,
+        )
+
+        event = asset.events.get(
+            action=AssetEvent.Action.SUBMITTED
+        )
+
+        self.assertEqual(event.actor, self.editor)
+        self.assertEqual(
+            event.from_status,
+            Asset.Status.DRAFT,
+        )
+
+        self.assertEqual(
+            event.to_status,
+            Asset.Status.IN_REVIEW,
+        )
+
+            
 class TaxonomyAPITests(AssetFactoryMixin, APITestCase):
     def setUp(self):
         User = get_user_model()
