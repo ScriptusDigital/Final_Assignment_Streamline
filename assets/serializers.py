@@ -207,78 +207,78 @@ class AssetSerializer(serializers.ModelSerializer):
 
         return instance
 
-def create(self, validated_data):
-    uploaded_file = validated_data.pop("file", None)
-    tags = validated_data.pop("tags", [])
-    collections = validated_data.pop("collections", [],)
+    def create(self, validated_data):
+        uploaded_file = validated_data.pop("file", None)
+        tags = validated_data.pop("tags", [])
+        collections = validated_data.pop("collections", [],)
 
 
-    try:
-        cloud_fields = (
-            cloudinary_service.upload_image(
-                uploaded_file
-            )
-        )
-
-    except (
-        cloudinary_service.ImageValidationError,
-        cloudinary_service.CloudinaryUploadError,
-    ) as exc:
-        raise serializers.ValidationError({
-            "file": str(exc),
-        }) from exc
-
-    request = self.context["request"]
-
-    try:
-        with transaction.atomic():
-            asset = Asset(
-                uploader=request.user,
-                **validated_data,
-                **cloud_fields,
+        try:
+            cloud_fields = (
+                cloudinary_service.upload_image(
+                    uploaded_file
+                )
             )
 
-            asset.full_clean()
-            asset.save()
+        except (
+            cloudinary_service.ImageValidationError,
+            cloudinary_service.CloudinaryUploadError,
+        ) as exc:
+            raise serializers.ValidationError({
+                "file": str(exc),
+            }) from exc
 
-            asset.tags.set(tags)
-            asset.collections.set(collections)
+        request = self.context["request"]
 
-            AssetEvent.objects.create(
-                asset=asset,
-                actor=request.user,
-                action=AssetEvent.Action.CREATED,
-                from_status="",
-                to_status=asset.status,
-                metadata={
-                    "original_filename": (
-                        asset.original_filename
-                    ),
-                },
+        try:
+            with transaction.atomic():
+                asset = Asset(
+                    uploader=request.user,
+                    **validated_data,
+                    **cloud_fields,
+                )
+
+                asset.full_clean()
+                asset.save()
+
+                asset.tags.set(tags)
+                asset.collections.set(collections)
+
+                AssetEvent.objects.create(
+                    asset=asset,
+                    actor=request.user,
+                    action=AssetEvent.Action.CREATED,
+                    from_status="",
+                    to_status=asset.status,
+                    metadata={
+                        "original_filename": (
+                            asset.original_filename
+                        ),
+                    },
+                )
+
+        except DjangoValidationError as exc:
+            cloudinary_service.destroy_image(
+                cloud_fields["public_id"],
+                delivery_type=(
+                    cloud_fields["delivery_type"]
+                ),
             )
 
-    except DjangoValidationError as exc:
-        cloudinary_service.destroy_image(
-            cloud_fields["public_id"],
-            delivery_type=(
-                cloud_fields["delivery_type"]
-            ),
-        )
+            raise serializers.ValidationError(
+                exc.message_dict
+            ) from exc
 
-        raise serializers.ValidationError(
-            exc.message_dict
-        ) from exc
+        except Exception:
+            cloudinary_service.destroy_image(
+                cloud_fields["public_id"],
+                delivery_type=(
+                    cloud_fields["delivery_type"]
+                ),
+            )
+            raise
 
-    except Exception:
-        cloudinary_service.destroy_image(
-            cloud_fields["public_id"],
-            delivery_type=(
-                cloud_fields["delivery_type"]
-            ),
-        )
-        raise
-
-    return asset
+        return asset
 
 class DashboardSerializer(serializers.Serializer):
     """ Serializer for the dashboard summary data. """
