@@ -1124,3 +1124,40 @@ class CloudinaryServiceTests(TestCase):
         )
 
         self.assertFalse(result)
+
+    @patch(
+        "assets.services.cloudinary_service."
+        "destroy_image"
+    )
+
+    @patch(
+        "assets.services.cloudinary_service."
+        "cloudinary.uploader.upload"
+    )
+
+    def test_incomplete_response_is_destroyed_and_rejected(
+        self,
+        mocked_upload,
+        mocked_destroy,):
+
+        mocked_upload.return_value = {
+            "public_id": "streamline/assets/public-2",
+            "secure_url": "https://example.test/image",
+            "width": 20,
+            "height": 10,
+            "bytes": 200,
+            "type": "authenticated",
+        }
+
+        with self.assertRaisesRegex(
+            cloudinary_service.CloudinaryUploadError,
+            "incomplete upload response",
+        ):
+            cloudinary_service.upload_image(
+                image_upload()
+            )
+
+        mocked_destroy.assert_called_once_with(
+            "streamline/assets/public-2",
+            delivery_type="authenticated",
+        )
