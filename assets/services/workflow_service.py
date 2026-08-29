@@ -110,3 +110,41 @@ def _assert_action (
     raise WorkflowError({
         "action": "Unknown workflow action.", 
     })
+
+@transaction.atomic
+def submit(
+    asset: Asset,
+    actor,  
+)   -> Asset:
+    """ Submit a completed asset for review. """
+
+    _assert_action(actor, asset, "submit",)
+
+    missing = _required_metadata(asset)
+    if missing:
+        raise WorkflowError({
+            "metadata": (
+                "Complete these fields before "
+                f"submission: {', '.join(missing)}."
+            ),
+        })
+
+    previous_status = asset.status
+    asset.status = Asset.Status.IN_REVIEW
+    asset.approved_at = None
+    asset.approved_at = None
+
+    asset.save(update_fields=(
+        "status",
+        "approver",
+        "approved_at",
+        "updated_at",
+    ))
+
+    AssetEvent.objects.create(
+        asset=asset,
+        actor=actor,
+        action=AssetEvent.Action.SUBMITTED,
+        from_status=previous_status,
+        to_status=asset.status,
+    )
