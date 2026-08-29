@@ -1915,6 +1915,70 @@ class AssetAPITests(AssetFactoryMixin, APITestCase):
             ],
         )
 
+    def test_audit_history_and_delete_protection(
+        self,
+    ):
+        asset = self.make_asset(
+            self.editor,
+            status=Asset.Status.APPROVED,
+            approver=self.admin,
+            approved_at=timezone.now(),
+        )
+
+        AssetEvent.objects.create(
+            asset=asset,
+            action=self.editor,
+            action=AssetEvent.Action.CREATED,
+            from_status="",
+            to_status=Asset.Status.DRAFT,
+        )
+
+        self.client.force_authenticate(
+            self.viewer
+        )
+
+
+        viewer_history = self.client.get(
+            reverse("asset-events", args=[asset.pk])
+        )
+
+        self.assertEqual(
+            viewer_history.status_code,
+            403,        
+        )
+
+        self.client.force_authenticate(
+            self.admin
+        )
+
+        admin_history = self.client.get(
+            reverse("asset-events", args=[asset.pk])
+        )   
+
+        self.assertEqual(
+            admin_history.status_code,
+            200,
+            admin_history.data,
+        )
+
+        self.assertEqual(
+            admin_history.data[0]["action"],
+            AssetEvent.Action.CREATED,
+        )
+
+        deletion = self.client.delete(
+            reverse("asset-detail", args=[asset.pk])
+        )   
+
+        self.assertEqual(
+            deletion.status_code,
+            405,   
+        )
+
+        self.assertTrue(
+            Asset.objects.filter(pk=asset.pk).exists()
+        )   
+
 
 class CloudinaryServiceTests(TestCase):
     def test_validation_checks_bytes_not_extension(self):

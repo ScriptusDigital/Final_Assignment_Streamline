@@ -6,9 +6,9 @@ from rest_framework import viewsets, serializers
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 
-from .models import Asset, Collection, Tag
+from .models import Asset, AssetEvent, Collection, Tag
 from .permissions import AssetPermission, TaxonomyPermission
-from .serializers import (AssetSerializer,CollectionSerializer,TagSerializer, DashboardSerializer
+from .serializers import (AssetEventSerializer, AssetSerializer,CollectionSerializer,TagSerializer, DashboardSerializer
 )
 from .services import workflow_service
 from datetime import timedelta
@@ -317,6 +317,44 @@ class AssetViewSet(viewsets.ModelViewSet):
         return self._workflow_response(
             workflow_service.restore
         )
+
+    @action(
+        detail=True,
+        methods=("get",),
+    )
+
+    def events(
+        self,
+        request,
+        *args,
+        **kwargs,
+    ):
+       """Return the asset's workflow history."""
+
+       asset = self.get_object()
+
+       if (
+           workflow_service.user_role(request.user)
+           == "viewer"
+       ):
+
+           from rest_framework.exceptions import (
+               PermissionDenied,
+           )    
+
+           raise PermissionDenied(
+               """ Audit history is not available for viewers. """
+           )
+
+       events = (
+          asset.events.select_related("actor")
+       )
+
+       serializer = AssetEventSerializer(
+           events,
+           many=True,)
+
+       return Response(serializer.data)
 
 class DashboardView(APIView):
     """ API view for the dashboard, providing counts of assets by status. """
