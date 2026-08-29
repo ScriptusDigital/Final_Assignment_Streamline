@@ -38,20 +38,30 @@ def cloudinary_response(number=1):
         "version": number,
     }
 
-def image_upload(name="test_image.png", format="PNG", size=(100, 100), color=(255, 0, 0)):
-    """Create a simple in-memory image file for testing."""
+def image_upload(
+    name="test.png",
+    image_format="PNG",
+):
+    """Create a genuine in-memory image for tests."""
 
-    image = Image.new("RGB", size, color)
-    byte_io = BytesIO()
-    image.save(byte_io, format=format)
-    byte_io.seek(0)
+    stream = BytesIO()
 
-    return SimpleUploadedFile(
-        name=name,
-        content=byte_io.read(),
-        content_type=f"image/{format.lower()}",
+    Image.new(
+        "RGB",
+        (16, 12),
+        color=(35, 90, 140),
+    ).save(
+        stream,
+        format=image_format,
     )
 
+    return SimpleUploadedFile(
+        name,
+        stream.getvalue(),
+        content_type=(
+            f"image/{image_format.lower()}"
+        ),
+    )
 class AssetFactoryMixin:
     asset_number = 0
 
