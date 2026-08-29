@@ -906,6 +906,51 @@ class WorkflowAccessTests(AssetFactoryMixin, TestCase):
             Asset.Status.DRAFT,
         )
 
+    def test_only_admin_can_restore_archived_asset(self):
+        asset = self.make_asset(
+            self.editor,
+            status=Asset.Status.CHANGES_REQUESTED,
+        )
+
+        workflow_service.archive(
+            asset, 
+            self.editor,   
+        )
+
+        with self.assertRaises(PermissionDenied):
+            workflow_service.restore(
+                asset,
+                self.editor,
+            )
+
+        workflow_service.restore(
+            asset,
+            self.admin,
+        )
+
+        asset.refresh_from_db()
+
+        self.assertEqual(
+            asset.status,
+            Asset.Status.CHANGES_REQUESTED,
+        )
+
+        self.assertIsNone(asset.archived_at)
+
+        event = asset.events.get(
+            action=AssetEvent.Action.RESTORED
+        )
+
+        self.assertEqual(event.actor, self.admin)
+        self.assertEqual(
+            event.from_status,
+            Asset.Status.ARCHIVED,
+        )
+        self.assertEqual(
+            event.to_status,
+            Asset.Status.CHANGES_REQUESTED,
+        )   
+
 
 class TaxonomyAPITests(AssetFactoryMixin, APITestCase):
     def setUp(self):
