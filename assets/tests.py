@@ -952,6 +952,54 @@ class WorkflowAccessTests(AssetFactoryMixin, TestCase):
         )   
 
 
+    def test_allowed_actions_follow_role_and_status(self):
+        asset = self.make_asset(
+            self.editor,
+            status=Asset.Status.IN_REVIEW,
+        )
+
+        admin_actions = workflow_service.allowed_actions(
+            self.admin,
+            asset,
+        )
+
+        editor_actions = workflow_service.allowed_actions(
+            self.editor,
+            asset,
+        )
+
+        viewer_actions = workflow_service.allowed_actions(
+            self.viewer,
+            asset,
+        )
+
+        self.assertIn("approve", admin_actions)
+        self.assertIn("request_changes", admin_actions)
+        self.assertIn("archive", admin_actions)
+        self.assertNotIn("download", admin_actions)
+
+        self.assertEqual(
+            editor_actions,
+            ["download"],
+        )
+
+        self.assertEqual(
+            viewer_actions, [])
+
+        workflow_service.archive(
+            asset,
+            self.admin,
+        )
+
+        archived_actions = (workflow_service.allowed_actions(
+            self.admin,
+            asset,
+        )
+        )
+
+        self.assertIn("restore", archived_actions)
+        self.assertNotIn("download", archived_actions)
+
 class TaxonomyAPITests(AssetFactoryMixin, APITestCase):
     def setUp(self):
         User = get_user_model()
