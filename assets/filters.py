@@ -31,7 +31,7 @@ class AssetFilter(django_filters.FilterSet):
         model = Asset
         fields = ('status', 'rights_status', 'permitted_use',)
 
-   def filter_tag(
+    def filter_by_tag(
         self,
         queryset,
         name,

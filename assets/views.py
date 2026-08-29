@@ -14,6 +14,9 @@ from .services import workflow_service
 from datetime import timedelta
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django_filters.rest_framework import (DjangoFilterBackend,)
+from rest_framework.filters import OrderingFilter
+from .filters import AssetFilter
 
 class AssetPagination(PageNumberPagination):
     """ Custom pagination class for Asset model. """
@@ -81,6 +84,19 @@ class AssetViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """ Return a queryset of assets visible to the current user. """
         return visible_assets_for(self.request.user)
+
+filter_backends = [DjangoFilterBackend, OrderingFilter]
+
+filterset_class = AssetFilter
+
+ordering_fields = (
+    "created_at",
+    "updated_at",
+    "captured_at",
+    "title",
+    "expiry_date",
+)
+ordering = ("-created_at",)
 
 class DashboardView(APIView):
     """ API view for the dashboard, providing counts of assets by status. """
