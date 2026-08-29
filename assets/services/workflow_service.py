@@ -376,3 +376,57 @@ def archive(
     )
 
     return asset
+
+@transaction.atomic
+def restore(
+    asset: Asset,
+    actor,
+) -> Asset:
+    """Restore an archived asset to its previous status."""
+
+    _assert_action(actor, asset, "restore")
+
+    previous_status = asset.status
+
+    latest_archive = asset.events.filter(
+        action=AssetEvent.Action.ARCHIVED
+    ).first()
+
+    previous_status = (
+        (latest_archive.metadata or {}).get(
+            "previous_status"
+        )
+        if latest_archive
+        else None
+    )
+
+    restored_to = (
+        Asset.Status.CHANGES_REQUESTED
+        if previous_status == Asset.Status.CHANGES_REQUESTED
+        else Asset.Status.DRAFT
+    )
+
+    asset.status = restored_to
+    asset.archived_at = None    
+    asset.approver = None
+    asset.approved_at = None
+
+    asset.save(
+        update_fields=(
+            "status",
+            "archived_at",
+            "approver",
+            "approved_at",
+            "updated_at",
+        )
+    )
+
+    AssetEvent.objects.create(
+        asset=asset,
+        actor=actor,
+        action=AssetEvent.Action.RESTORED,
+        from_status=Asset.Status.ARCHIVED,
+        to_status=asset.status,
+    )
+
+    return asset
