@@ -6,6 +6,7 @@ from urllib.parse import urlparse, unquote
 
 import cloudinary
 from django.conf import settings
+import cloudinary.uploader
 
 
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
@@ -79,6 +80,25 @@ def validate_image(uploaded_file) -> str:
         uploaded_file.seek(0)
 
     return image_format.lower()
+
+def upload_image(uploads_file) -> dict:
+    """Upload an image to Cloudinary and return the upload result."""
+
+    _configure_cloudinary()
+
+    try:
+        result = cloudinary.uploader.upload(
+            uploads_file,
+            folder=getattr(settings, "CLOUDINARY_UPLOAD_FOLDER", ""),
+            resource_type="image",
+        )
+
+    except Exception as exc:
+        raise CloudinaryUploadError(
+            "An error occurred while uploading the image to Cloudinary."
+        ) from exc
+
+    return result
 
 def _configure_cloudinary() -> None:
     """ Load server-side Cloudinary configuration from Django settings. """
