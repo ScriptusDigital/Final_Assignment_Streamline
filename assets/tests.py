@@ -976,7 +976,7 @@ class WorkflowAccessTests(AssetFactoryMixin, TestCase):
         self.assertIn("approve", admin_actions)
         self.assertIn("request_changes", admin_actions)
         self.assertIn("archive", admin_actions)
-        self.assertNotIn("download", admin_actions)
+        self.assertIn("download", admin_actions)
 
         self.assertEqual(
             editor_actions,
