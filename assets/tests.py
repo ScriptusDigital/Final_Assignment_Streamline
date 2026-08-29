@@ -4,7 +4,7 @@ from datetime import timedelta
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from django.test import TestCase, override_settings
+from django.test import TestCase, override_settings, tag
 from django.utils import timezone
 from django.urls import reverse 
 
@@ -449,6 +449,55 @@ class AssetSerializerTests(AssetFactoryMixin, TestCase):
             "file",
             update_serializer.data,
         )
+
+    @patch("assets.serializers.cloudinary_service.upload_image")
+    def test_create_uploads_image_and_records_event(
+    self,
+    mocked_upload,
+):
+        mocked_upload.return_value = cloudinary_response(500)
+
+        tag = Tag.objects.create(name="Track")
+
+        request = APIRequestFactory().post("/api/assets/")
+
+        request.user = self.editor
+
+        serializer = AssetSerializer(
+            data={
+                "file": image_upload(),
+                "title": "Track final",
+                "alt_text": "Athletes run around a track",
+                "photographer_credit": "Course Student",
+                "rights_status": Asset.RightsStatus.CLEARED,
+                "permitted_use": Asset.PermittedUse.EDITORIAL,
+                "tag_ids": [tag.pk],
+            },
+            context={"request": request},
+        )
+
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+
+        asset = serializer.save()
+
+        self.assertEqual(asset.uploader, self.editor)
+        self.assertEqual(
+            asset.public_id,
+            "streamline/assets/public-500",
+    )
+        self.assertEqual(
+            list(asset.tags.all()),
+            [tag],
+    )
+
+        event = asset.events.get(
+            action=AssetEvent.Action.CREATED
+        )
+
+        self.assertEqual(event.actor, self.editor)
+        self.assertEqual(event.metadata["original_filename"], "photo-500")
+
+
 
 class WorkflowAccessTests(AssetFactoryMixin, TestCase):
     def setUp(self):
