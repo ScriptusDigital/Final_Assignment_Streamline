@@ -992,3 +992,81 @@ class CloudinaryServiceTests(TestCase):
             api_secret="test-secret",
             secure=True,
         )
+
+    @override_settings(
+        CLOUDINARY_UPLOAD_FOLDER=(
+            "streamline/assets"
+        )
+    )
+    @patch(
+        "assets.services.cloudinary_service."
+        "cloudinary.uploader.upload"
+    )  
+
+    def test_upload_is_authenticated_and_normalised(
+        self,
+        mocked_upload,
+    ):
+        mocked_upload.return_value = {
+            "asset_id": "immutable-provider-id",
+            "public_id": ("streamline/assets/generated-id"),
+            "secure_url": (
+                "https://example.test/private-image"
+            ),
+            "original_filename": ".test",
+            "format": "png",
+            "width": 1200,
+            "height": 800,
+            "bytes": 23456,
+            "type": "authenticated",
+            "version": 4,
+        }
+
+        result = cloudinary_service.upload_image(
+            image_upload()
+        )
+
+        self.assertEqual(
+            result["cloudinary_asset_id"],
+            "immutable-provider-id",
+        )
+
+        self.assertEqual(
+            result["public_id"],
+            "streamline/assets/generated-id",
+        )
+
+        self.assertEqual(
+            result["delivery_type"],
+            "authenticated",
+        )
+
+        self.assertEqual(result["image_format"], "png")
+        self.assertEqual(result["width"], 1200)
+        self.assertEqual(result["height"], 800)
+
+        uploads_options = (mocked_upload.call_args.kwargs)
+
+        self.assertEqual(
+            uploads_options["folder"],
+            "streamline/assets",
+        )
+
+        self.assertEqual(
+            uploads_options["resource_type"],
+            "image",
+        )
+
+        self.assertEqual(
+            uploads_options["type"],
+            "authenticated",
+        )
+
+        self.assertFalse(uploads_options["use_filename"]
+                         )
+
+        self.assertTrue(uploads_options["unique_filename"]
+                        )
+
+        self.assertFalse(uploads_options["overwrite"]
+        )
