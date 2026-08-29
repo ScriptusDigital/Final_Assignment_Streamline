@@ -404,13 +404,17 @@ class AssetSerializerTests(AssetFactoryMixin, TestCase):
             ["caption", "tags", "collections"],
         )
 
-    def test_file_is_required_on_create_but_not_update(self):
+    def test_file_is_required_on_create_but_not_update(
+        self,
+    ):
         create_serializer = AssetSerializer()
 
-        self.assertTrue(create_serializer.fields["file"].required)
-
         self.assertTrue(
-        create_serializer.fields["file"].write_only)
+            create_serializer.fields["file"].required
+        )
+        self.assertTrue(
+            create_serializer.fields["file"].write_only
+        )
 
         asset = self.make_asset(self.editor)
 
@@ -418,9 +422,13 @@ class AssetSerializerTests(AssetFactoryMixin, TestCase):
             instance=asset,
         )
 
-        self.assertFalse(update_serializer.fields["file"].required)
-
-        self.assertNotIn("file", update_serializer.data)
+        self.assertFalse(
+            update_serializer.fields["file"].required
+        )
+        self.assertNotIn(
+            "file",
+            update_serializer.data,
+        )
 
 class WorkflowAccessTests(AssetFactoryMixin, TestCase):
     def setUp(self):

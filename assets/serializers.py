@@ -48,7 +48,7 @@ class AssetEventSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = AssetEvent
-        fields = ("id","file","actor","action","action_label","from_status","to_status","message","metadata","created_at",
+        fields = ("id","actor","action","action_label","from_status","to_status","message","metadata","created_at",
         )
 
 
@@ -82,6 +82,7 @@ class AssetSerializer(serializers.ModelSerializer):
         model = Asset
         fields = (
             "id",
+            "file",
             "title",
             "caption",
             "alt_text",
@@ -120,7 +121,7 @@ class AssetSerializer(serializers.ModelSerializer):
         )
 
         read_only_fields = (
-             "status",
+            "status",
             "uploader",
             "approver",
             "approved_at",
@@ -139,23 +140,8 @@ class AssetSerializer(serializers.ModelSerializer):
             "updated_at",
         )
 
-        tag_ids = serializers.PrimaryKeyRelatedField(
-            many=True,
-            queryset=Tag.objects.all(),
-            source='tags',
-            write_only=True,
-            required=False,
-        )
 
-        collection_ids = serializers.PrimaryKeyRelatedField(
-            many=True,
-            queryset=Collection.objects.all(),
-            source='collections',
-            write_only=True,
-            required=False,
-        )
-
-        def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
 
             if self.instance is not None:
