@@ -723,7 +723,7 @@ class WorkflowAccessTests(AssetFactoryMixin, TestCase):
             self.editor,
             status=Asset.Status.DRAFT,
             alt_text="",
-            ),
+        )
 
         with self.assertRaises(
             workflow_service.WorkflowError
