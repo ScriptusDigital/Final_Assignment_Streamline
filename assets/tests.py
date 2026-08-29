@@ -1927,7 +1927,7 @@ class AssetAPITests(AssetFactoryMixin, APITestCase):
 
         AssetEvent.objects.create(
             asset=asset,
-            action=self.editor,
+            actor=self.editor,
             action=AssetEvent.Action.CREATED,
             from_status="",
             to_status=Asset.Status.DRAFT,
