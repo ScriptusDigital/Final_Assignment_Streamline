@@ -1,5 +1,11 @@
 """Cloudinary service module for handling image uploads and transformations."""
 from __future__ import annotations
+from dataclasses import dataclass
+from dataclasses import dataclass
+from datetime import (
+    datetime,
+    timezone as datetime_timezone,
+)
 
 from PIL import Image, UnidentifiedImageError
 from urllib.parse import urlparse, unquote
@@ -7,7 +13,7 @@ from urllib.parse import urlparse, unquote
 import cloudinary
 from django.conf import settings
 import cloudinary.uploader
-
+import cloudinary.utils
 
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 
@@ -26,6 +32,12 @@ class ImageValidationError(ValueError):
 
 class CloudinaryUploadError(RuntimeError):
     """An error occurred while uploading the image to Cloudinary."""
+
+@dataclass(frozen=True)
+class SignedDownload:
+    """Temporary signed download URL for a Cloudinary asset."""
+    url: str
+    expires_at: datetime
 
 def validate_image(uploaded_file) -> str:
     """Inspect the actual file bytes and return its image format."""
@@ -189,7 +201,7 @@ def _configure_cloudinary() -> None:
         if cloudinary_url:
             parsed = urlparse(cloudinary_url)
 
-            if parsed.scheme != "cloudinary":
+            if parsed.scheme == "cloudinary":
                 cloud_name = parsed.hostname
                 api_key = unquote(parsed.username or "")
                 api_secret = unquote(parsed.password or "")
@@ -201,3 +213,34 @@ def _configure_cloudinary() -> None:
                 api_secret=api_secret,
                 secure=True,
             )
+
+def signed_download_url(
+        asset,
+        *, 
+        expires_in: int = 300,
+) -> SignedDownload:
+    """Generate a temporary signed download URL for a Cloudinary asset."""
+
+    _configure_cloudinary()
+
+    now = datetime.now(datetime_timezone.utc)
+    expires_at = datetime.fromtimestamp(
+        int(now.timestamp()) + expires_in,
+        tz=datetime_timezone.utc,
+    )
+
+    try:
+        url = cloudinary.utils.private_download_url(
+            asset.public_id,
+            asset.image_format,
+            resource_type="image",
+            type=asset.delivery_type,
+            attachment=True,
+            expires_at=int(expires_at.timestamp()),
+        )
+    except Exception as exc:
+        raise CloudinaryUploadError(
+            "The image download URL could not be generated."
+        ) from exc
+
+    return SignedDownload(url=url, expires_at=expires_at)
