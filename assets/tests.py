@@ -1151,36 +1151,36 @@ class AssetAPITests(AssetFactoryMixin, APITestCase):
         )
 
         self.make_asset(
-        self.editor,
-        status=Asset.Status.IN_REVIEW,
-    )
+            self.editor,
+            status=Asset.Status.IN_REVIEW,
+        )
 
         self.client.force_authenticate(
             self.admin
-    )
+        )
 
         response = self.client.get(
-        reverse("asset-list"),
-        {
-            "status": Asset.Status.DRAFT,
-        },
-    )
+            reverse("asset-list"),
+            {
+                "status": Asset.Status.DRAFT,
+            },
+        )
 
         self.assertEqual(
-        response.status_code,
-        200,
-        response.data,
-    )
+            response.status_code,
+            200,
+            response.data,
+        )
 
         ids = {
-        item["id"]
-        for item in self.results(response)
-    }
+            item["id"]
+            for item in self.results(response)
+        }
 
         self.assertEqual(
-        ids,
-        {str(matching.pk)},
-    )
+            ids,
+            {str(matching.pk)},
+        )
 
 class CloudinaryServiceTests(TestCase):
     def test_validation_checks_bytes_not_extension(self):
