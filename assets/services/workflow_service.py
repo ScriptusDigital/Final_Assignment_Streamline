@@ -87,7 +87,65 @@ def _required_metadata(
 
     return missing  
 
+def allowed_actions(user, asset: Asset) -> list[str]:
+    """ Returns a list of allowed workflow actions for the user and asset. """
+    actions = []
 
+    if can_edit_metadata(user, asset):
+        actions.append("edit")
+
+    if (
+        (
+        is_admin(user)
+        or (
+            is_editor(user)
+            and asset.uploader_id == user.pk
+        )
+    )
+        and asset.status in (
+            Asset.Status.DRAFT,
+            Asset.Status.CHANGES_REQUESTED,
+    )
+        and not _required_metadata(asset)
+    ):
+        actions.append("submit")
+
+    if (
+        is_admin(user)
+        and asset.status == Asset.Status.IN_REVIEW
+    ):
+        actions.extend((
+            "approve",
+            "request_changes",
+        ))
+
+    if (
+        is_admin(user)
+        and asset.status != Asset.Status.ARCHIVED
+    ):
+        actions.append("archive")
+
+    elif (
+        is_editor(user)
+        and asset.uploader_id == user.pk
+        and asset.status in (
+            Asset.Status.DRAFT,
+            Asset.Status.CHANGES_REQUESTED,
+        )
+    ):
+        actions.append("archive")
+
+    if (
+        is_admin(user)
+        and asset.status == Asset.Status.ARCHIVED
+    ):
+        actions.append("restore")
+
+    if can_download(user, asset):
+        actions.append("download")
+
+
+    return actions
 
 def _assert_action(
     user,
