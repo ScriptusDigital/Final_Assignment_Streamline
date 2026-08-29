@@ -202,21 +202,32 @@ class AssetViewSet(viewsets.ModelViewSet):
             )
             | Q(notes__icontains=query)
         ).distinct()
-
-    def _work_flow_ (
-            self,
-            operation, 
-            *operation_args,
+    
+    def _workflow_response(
+        self,
+        operation,
+        *operation_args,
     ):
-        """ Run a workflow operation on the asset, handling exceptions and returning a response."""
+        """Run a workflow operation and return the asset."""
+
         asset = self.get_object()
 
         try:
-            operation(asset, self.request.user, *operation_args)
+            operation(
+                asset,
+                self.request.user,
+                *operation_args,
+            )
 
         except DjangoPermissionDenied as exc:
-            from rest_framework.exceptions import (PermissionDenied,)
-            raise PermissionDenied(detail=str(exc))
+            from rest_framework.exceptions import (
+                PermissionDenied,
+            )
+
+            raise PermissionDenied(
+                str(exc)
+            ) from exc
+
         except DjangoValidationError as exc:
             detail = (
                 getattr(exc, "message_dict", None)
@@ -224,28 +235,41 @@ class AssetViewSet(viewsets.ModelViewSet):
                 or str(exc)
             )
 
-            raise serializers.ValidationError(detail) from exc
+            raise serializers.ValidationError(
+                detail
+            ) from exc
 
-            asset.refresh_from_db()
+        asset.refresh_from_db()
 
-            return Response(
-                self.get_serializer(asset).data
-            )
-    @action(detail=True, methods=["post"])
-
-    def submit(self, request, *args, **kwargs):
-
-       return self._work_flow_response(
-           workflow_service.submit
-         )
+        return Response(
+            self.get_serializer(asset).data
+        )
 
     @action(
         detail=True,
         methods=("post",),
     )
+    def submit(
+        self,
+        request,
+        *args,
+        **kwargs,
+    ):
+        return self._workflow_response(
+            workflow_service.submit
+        )
 
-    def approve(self, request, *args, **kwargs):
-        return self._work_flow_response(
+    @action(
+        detail=True,
+        methods=("post",),
+    )
+    def approve(
+        self,
+        request,
+        *args,
+        **kwargs,
+    ):
+        return self._workflow_response(
             workflow_service.approve
         )
 
@@ -254,18 +278,27 @@ class AssetViewSet(viewsets.ModelViewSet):
         methods=("post",),
         url_path="request-changes",
     )
-    def request_changes(self, request, *args, **kwargs):
-        return self._work_flow_response(
+    def request_changes(
+        self,
+        request,
+        *args,
+        **kwargs,
+    ):
+        return self._workflow_response(
             workflow_service.request_changes,
             request.data.get("reason", ""),
         )
 
     @action(
         detail=True,
-        methods=("post",),)
-
-    def archive(self, request, *args, **kwargs):
-
+        methods=("post",),
+    )
+    def archive(
+        self,
+        request,
+        *args,
+        **kwargs,
+    ):
         return self._workflow_response(
             workflow_service.archive,
             request.data.get("reason", ""),
@@ -273,9 +306,14 @@ class AssetViewSet(viewsets.ModelViewSet):
 
     @action(
         detail=True,
-        methods=("post",),)
-
-    def restore(self, request, *args, **kwargs):
+        methods=("post",),
+    )
+    def restore(
+        self,
+        request,
+        *args,
+        **kwargs,
+    ):
         return self._workflow_response(
             workflow_service.restore
         )

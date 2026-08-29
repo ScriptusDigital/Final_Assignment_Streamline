@@ -217,7 +217,7 @@ class AssetSerializer(serializers.ModelSerializer):
 
         return workflow_service.allowed_actions(
             request.user,
-            obj
+            obj,
         )
         
                             
