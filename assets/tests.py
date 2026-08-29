@@ -7,6 +7,7 @@ from django.core.exceptions import ValidationError
 from django.test import TestCase, override_settings, tag
 from django.utils import timezone
 from django.urls import reverse
+from rest_framework import response
 from urllib3 import request 
 
 from .models import Asset, AssetEvent, Collection, Tag
@@ -1141,6 +1142,45 @@ class AssetAPITests(AssetFactoryMixin, APITestCase):
                 title="Unauthorised upload"
             ).exists()
         )
+
+
+    def test_assets_can_be_filtered_by_status(self):
+        matching = self.make_asset(
+            self.editor,
+            status=Asset.Status.DRAFT,
+        )
+
+        self.make_asset(
+        self.editor,
+        status=Asset.Status.IN_REVIEW,
+    )
+
+        self.client.force_authenticate(
+            self.admin
+    )
+
+        response = self.client.get(
+        reverse("asset-list"),
+        {
+            "status": Asset.Status.DRAFT,
+        },
+    )
+
+        self.assertEqual(
+        response.status_code,
+        200,
+        response.data,
+    )
+
+        ids = {
+        item["id"]
+        for item in self.results(response)
+    }
+
+        self.assertEqual(
+        ids,
+        {str(matching.pk)},
+    )
 
 class CloudinaryServiceTests(TestCase):
     def test_validation_checks_bytes_not_extension(self):
