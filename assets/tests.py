@@ -42,7 +42,7 @@ def image_upload(
     name="test.png",
     image_format="PNG",
 ):
-    """Create a genuine in-memory image for tests."""
+    """Create in-memory image for tests."""
 
     stream = BytesIO()
 
@@ -919,3 +919,43 @@ class AssetAPITests(AssetFactoryMixin, APITestCase):
             viewer_response.data["recent_assets"][0]["id"],
             str(approved_asset.pk),
         )
+
+class CloudinaryServiceTests(TestCase):
+    def test_validate_image_accepts_valid_image(self):
+        uploaded_file = image_upload(
+            name="valid.png",
+            image_format="PNG",
+        )
+
+        format_detected = cloudinary_service.validate_image(
+            uploaded_file
+        )
+
+        self.assertEqual(format_detected, "PNG")
+
+        with self.assertRaises(cloudinary_service.ImageValidationError):
+            invalid_file = SimpleUploadedFile(
+                "not_an_image.txt",
+                b"This is not an image.",
+                content_type="text/plain",
+            )
+            cloudinary_service.validate_image(invalid_file)     
+
+            def test_validate_image_rejects_large_image(self):
+                large_file = SimpleUploadedFile(
+                    "large_image.png",
+                    b"\x00" * (cloudinary_service.MAX_UPLOAD_BYTES + 1),
+                    content_type="image/png",
+                )
+
+                with self.assertRaises(cloudinary_service.ImageValidationError):
+                    cloudinary_service.validate_image(large_file)   
+
+            def test_validate_image_rejects_unsupported_format(self):
+                unsupported_file = image_upload(
+                    name="unsupported.bmp",
+                    image_format="BMP",
+                )
+
+                with self.assertRaises(cloudinary_service.ImageValidationError):
+                    cloudinary_service.validate_image(unsupported_file)     
