@@ -48,7 +48,7 @@ class AssetEventSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = AssetEvent
-        fields = ("id","actor","action","action_label","from_status","to_status","message","metadata","created_at",
+        fields = ("id","file","actor","action","action_label","from_status","to_status","message","metadata","created_at",
         )
 
 
@@ -75,6 +75,8 @@ class AssetSerializer(serializers.ModelSerializer):
     approver = UserSummarySerializer(read_only=True)
     is_expired = serializers.BooleanField(read_only=True)
     is_viewer_accessible = serializers.BooleanField(read_only=True)
+    file = serializers.FileField(write_only=True, required=True)
+
 
     class Meta:
         model = Asset
@@ -152,6 +154,12 @@ class AssetSerializer(serializers.ModelSerializer):
             write_only=True,
             required=False,
         )
+
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+
+            if self.instance is not None:
+                self.fields['file'].required = False
 
     def update(self, instance, validated_data):
         tags_marker = object()
