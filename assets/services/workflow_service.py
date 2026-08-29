@@ -41,3 +41,29 @@ def can_view(user, asset: Asset) -> bool:
     return True
 
   return asset.is_viewer_accessible
+
+def _required_metadata(
+      asset: Asset,         
+)  -> list[str]:
+    """ Returns a list of required metadata fields for the asset. """
+    required = {
+        "title": asset.title,
+        "alt_text": asset.alt_text,
+        "photographer_credit": (
+            asset.photographer_credit
+        ),
+    }
+
+    missing = [
+       label.replace("_", " ")
+       for label, value in required.items()
+       if not str(value).strip()
+    ]
+
+    if (
+        asset.rights_status
+        == Asset.RightsStatus.UNKNOWN    
+):
+        missing.append("rights status")
+
+    return missing  

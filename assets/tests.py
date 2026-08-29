@@ -673,6 +673,45 @@ class WorkflowAccessTests(AssetFactoryMixin, TestCase):
         )
 
 
+    def test_required_metadata_identifies_submission_gaps(
+    self,
+):
+        asset = self.make_asset(
+            self.editor,
+            status=Asset.Status.DRAFT,
+            alt_text="",
+            photographer_credit="",
+            rights_status=(Asset.RightsStatus.UNKNOWN
+        ),
+        )
+
+        self.assertCountEqual(
+            workflow_service._required_metadata(asset),
+            [
+                "title",
+                "alt text",
+                "photographer credit",
+                "rights status",
+            ],
+        )
+
+        asset.alt_text = (
+            "A runner crosses the finish line"
+        )
+        asset.photographer_credit = (
+            "Course Photographer"
+        )
+        asset.rights_status = (
+            Asset.RightsStatus.CLEARED
+        )
+
+        self.assertEqual(
+            workflow_service._required_metadata(
+                asset
+            ),
+            [],
+        )
+
 class TaxonomyAPITests(AssetFactoryMixin, APITestCase):
     def setUp(self):
         User = get_user_model()
