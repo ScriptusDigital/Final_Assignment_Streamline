@@ -14,6 +14,12 @@ from .services import workflow_service
 from datetime import timedelta
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django_filters.rest_framework import (DjangoFilterBackend,)
+from rest_framework.filters import OrderingFilter
+from .filters import AssetFilter
+
+from django.contrib.postgres.search import (SearchVector, SearchQuery, SearchRank)
+from django.db import connection
 
 class AssetPagination(PageNumberPagination):
     """ Custom pagination class for Asset model. """
@@ -76,11 +82,119 @@ class AssetViewSet(viewsets.ModelViewSet):
     )
     pagination_class = AssetPagination
 
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+
+    filterset_class = AssetFilter
+
+    ordering_fields = (
+        "created_at",
+        "updated_at",
+        "captured_at",
+        "title",
+        "expiry_date",
+    )
+ 
+
     http_method_names = ["get", "post", "head", "patch", "options"]
 
     def get_queryset(self):
-        """ Return a queryset of assets visible to the current user. """
-        return visible_assets_for(self.request.user)
+        """Return viewable assets for the current user, with related fields preloaded."""
+        queryset = visible_assets_for(
+        self.request.user
+    )
+
+        query = self.request.query_params.get(
+            "q",
+            "",
+        ).strip()
+
+        if not query:
+            return queryset
+
+        if connection.vendor == "postgresql":
+            vector = (
+                SearchVector(
+                    "title",
+                    weight="A",
+                    config="english",
+                )
+                + SearchVector(
+                    "caption",
+                    weight="B",
+                    config="english",
+                )
+                + SearchVector(
+                    "alt_text",
+                    weight="B",
+                    config="english",
+                )
+                + SearchVector(
+                    "event_name",
+                    weight="B",
+                    config="english",
+                )
+                + SearchVector(
+                    "tags__name",
+                    weight="B",
+                    config="english",
+                )
+                + SearchVector(
+                    "collections__name",
+                    weight="B",
+                    config="english",
+                )
+                + SearchVector(
+                    "location",
+                    weight="C",
+                    config="english",
+                )
+                + SearchVector(
+                    "photographer_credit",
+                    weight="C",
+                    config="english",
+                )
+                + SearchVector(
+                    "notes",
+                    weight="D",
+                    config="english",
+                )
+            )
+
+            search_query = SearchQuery(
+                query,
+                search_type="websearch",
+                config="english",
+            )
+
+            return (
+                queryset
+                .annotate(
+                    search_rank=SearchRank(
+                        vector,
+                        search_query,
+                    )
+                )
+                .filter(search_rank__gt=0)
+                .order_by(
+                    "-search_rank",
+                    "-created_at",
+                )
+                .distinct()
+            )
+
+        return queryset.filter(
+            Q(title__icontains=query)
+            | Q(caption__icontains=query)
+            | Q(alt_text__icontains=query)
+            | Q(event_name__icontains=query)
+            | Q(tags__name__icontains=query)
+            | Q(collections__name__icontains=query)
+            | Q(location__icontains=query)
+            | Q(
+                photographer_credit__icontains=query
+            )
+            | Q(notes__icontains=query)
+        ).distinct()
 
 class DashboardView(APIView):
     """ API view for the dashboard, providing counts of assets by status. """

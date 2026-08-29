@@ -7,6 +7,7 @@ from django.core.exceptions import ValidationError
 from django.test import TestCase, override_settings, tag
 from django.utils import timezone
 from django.urls import reverse
+from rest_framework import response
 from urllib3 import request 
 
 from .models import Asset, AssetEvent, Collection, Tag
@@ -1141,6 +1142,269 @@ class AssetAPITests(AssetFactoryMixin, APITestCase):
                 title="Unauthorised upload"
             ).exists()
         )
+
+
+    def test_assets_can_be_filtered_by_status(self):
+        matching = self.make_asset(
+            self.editor,
+            status=Asset.Status.DRAFT,
+        )
+
+        self.make_asset(
+            self.editor,
+            status=Asset.Status.IN_REVIEW,
+        )
+
+        self.client.force_authenticate(
+            self.admin
+        )
+
+        response = self.client.get(
+            reverse("asset-list"),
+            {
+                "status": Asset.Status.DRAFT,
+            },
+        )
+
+        self.assertEqual(
+            response.status_code,
+            200,
+            response.data,
+        )
+
+        ids = {
+            item["id"]
+            for item in self.results(response)
+        }
+
+        self.assertEqual(
+            ids,
+            {str(matching.pk)},
+        )
+
+
+    def test_free_text_search_and_structured_filters(
+        self,):
+        matching = self.make_asset(
+            self.editor,
+            status=Asset.Status.APPROVED,
+            title="Olympic rowing final",
+            location="Paris",
+            approver=self.admin,
+            approved_at=timezone.now(),
+    )
+        self.make_asset(
+            self.editor,
+            status=Asset.Status.APPROVED,
+            title="Mountain cycling",
+            location="Nice",
+            approver=self.admin,
+            approved_at=timezone.now(),
+        )
+
+        self.client.force_authenticate(
+            self.viewer
+        )
+
+        response = self.client.get(
+            reverse("asset-list"),
+            {
+                "q": "rowing",
+                "rights_status": (Asset.RightsStatus.CLEARED,),
+            },
+        )
+
+        self.assertEqual(
+            response.status_code,
+            200,
+            response.data,
+        )
+
+        ids = {
+            item["id"]
+            for item in self.results(response)
+        }
+
+        self.assertEqual(
+            ids,
+            {str(matching.pk)},
+        )
+
+    def test_search_cannot_reveal_hidden_assets(
+    self,
+):
+        hidden = self.make_asset(
+            self.editor,
+            status=Asset.Status.DRAFT,
+            title="Confidential rowing plans"
+        )
+
+        self.client.force_authenticate(
+            self.viewer
+        )
+
+        response = self.client.get(
+            reverse("asset-list"),
+            {
+                "q": "rowing",
+            },
+        )
+
+        self.assertEqual(
+            response.status_code,
+            200,
+            response.data,
+        )
+
+        ids = {
+            item["id"]
+            for item in self.results(response)
+        }
+
+        self.assertNotIn(
+            str(hidden.pk),
+            ids,
+        )
+        self.assertEqual(
+            ids,
+            set(),
+        )
+
+    def test_tag_and_collection_filters_can_be_combined(
+        self,
+    ):
+        tag = Tag.objects.create(
+            name="Athletics Search"
+        )
+
+        collection = Collection.objects.create(
+            name="Paris Games Search",
+            created_by=self.editor,
+        )
+
+        matching = self.make_asset(
+            self.editor,
+            status=Asset.Status.APPROVED,
+            approver=self.admin,
+            approved_at=timezone.now(),
+        )
+
+        non_matching = self.make_asset(
+            self.editor,
+            status=Asset.Status.APPROVED,
+            approver=self.admin,
+            approved_at=timezone.now(),
+        )
+
+        matching.tags.add(tag)
+        matching.collections.add(collection)
+
+        self.client.force_authenticate(
+            self.viewer
+        )
+
+        response = self.client.get(
+            reverse("asset-list"),
+            {
+                "tag": tag.slug,
+                "collection": collection.pk,
+            },
+        )
+
+        self.assertEqual(
+            response.status_code,
+            200,
+            response.data,
+        )
+
+        ids = {
+            item["id"]
+            for item in self.results(response)
+        }
+
+        self.assertEqual(
+            ids,
+            {str(matching.pk)},
+        )
+        self.assertNotIn(
+            str(non_matching.pk),
+            ids,
+        )
+
+    def test_expiry_filter_and_title_ordering(
+    self,
+):
+        zulu = self.make_asset(
+            self.editor,
+            title="Zulu photograph",
+            expiry_date=(
+                timezone.localdate()
+                + timedelta(days=20)
+            ),
+        )
+
+        alpha = self.make_asset(
+            self.editor,
+            title="Alpha photograph",
+            expiry_date=(
+                timezone.localdate()
+                + timedelta(days=10)
+            ),
+        )
+
+        no_expiry = self.make_asset(
+            self.editor,
+            title="No expiry photograph",
+            expiry_date=None,
+        )
+
+        self.client.force_authenticate(
+            self.admin
+        )
+
+        response = self.client.get(
+            reverse("asset-list"),
+            {
+                "has_expiry": "true",
+                "ordering": "title",
+            },
+        )
+
+        self.assertEqual(
+            response.status_code,
+            200,
+            response.data,
+        )
+
+        results = self.results(response)
+
+        self.assertEqual(
+            [item["title"] for item in results],
+            [
+                "Alpha photograph",
+                "Zulu photograph",
+            ],
+        )
+
+        ids = {
+            item["id"]
+            for item in results
+        }
+
+        self.assertEqual(
+            ids,
+            {
+                str(alpha.pk),
+                str(zulu.pk),
+            },
+        )
+        self.assertNotIn(
+            str(no_expiry.pk),
+            ids,
+        )
+
+
+
 
 class CloudinaryServiceTests(TestCase):
     def test_validation_checks_bytes_not_extension(self):
