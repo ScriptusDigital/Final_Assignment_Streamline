@@ -810,25 +810,25 @@ class WorkflowAccessTests(AssetFactoryMixin, TestCase):
     )
 
 
-def test_request_changes_requires_reason(
-    self,
-):
-    asset = self.make_asset(
-        self.editor,
-        status=Asset.Status.IN_REVIEW,
-    )
-
-    with self.assertRaises(
-        workflow_service.WorkflowError
+    def test_request_changes_requires_reason(
+        self,
     ):
-        workflow_service.request_changes(
-            asset,
-            self.admin,
-            "   ",
+        asset = self.make_asset(
+            self.editor,
+            status=Asset.Status.IN_REVIEW,
         )
 
+        with self.assertRaises(
+            workflow_service.WorkflowError
+        ):
+            workflow_service.request_changes(
+                asset,
+                self.admin,
+                "   ",
+            )
+
         workflow_service.request_changes(
-            asset,  
+            asset,
             self.admin,
             "Add the photographer credit.",
         )
@@ -839,16 +839,23 @@ def test_request_changes_requires_reason(
             asset.status,
             Asset.Status.CHANGES_REQUESTED,
         )
-
         self.assertIsNone(asset.approver)
         self.assertIsNone(asset.approved_at)
 
         event = asset.events.get(
-            action=AssetEvent.Action.CHANGES_REQUESTED
-        )   
+            action=(
+                AssetEvent.Action.CHANGES_REQUESTED
+            )
+        )
 
-        self.assertEqual(event.actor, self.admin)
-        self.assertEqual(event.message, "Add the photographer credit.")
+        self.assertEqual(
+            event.actor,
+            self.admin,
+        )
+        self.assertEqual(
+            event.message,
+            "Add the photographer credit.",
+        )
 
 class TaxonomyAPITests(AssetFactoryMixin, APITestCase):
     def setUp(self):
