@@ -1088,3 +1088,22 @@ class CloudinaryServiceTests(TestCase):
             cloudinary_service.upload_image(
                 image_upload()
             )
+
+    @patch(
+        "assets.services.cloudinary_service."
+        "cloudinary.uploader.destroy"
+    )   
+    def test_destroy_uses_matching_delivery_type(self, mocked_destroy):
+        cloudinary_service.destroy_image(
+        "streamline/assets/public-1",
+        delivery_type="authenticated",
+    )
+
+        mocked_destroy.assert_called_once_with(
+            "streamline/assets/public-1",
+            resource_type="image",
+            type="authenticated",
+            invalidate=True,
+        )
+
+       
