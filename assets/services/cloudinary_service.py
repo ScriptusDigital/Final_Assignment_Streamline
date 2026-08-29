@@ -81,25 +81,82 @@ def validate_image(uploaded_file) -> str:
 
     return image_format.lower()
 
-def upload_image(uploads_file) -> dict:
+def upload_image(uploaded_file) -> dict:
     """Upload an image to Cloudinary and return the upload result."""
+
+    validated_format = validate_image(
+        uploaded_file
+    )
 
     _configure_cloudinary()
 
+    folder = getattr(settings, "CLOUDINARY_UPLOAD_FOLDER", "streamline/assets")
+
     try:
-        result = cloudinary.uploader.upload(
-            uploads_file,
-            folder=getattr(settings, "CLOUDINARY_UPLOAD_FOLDER", ""),
+        response = cloudinary.uploader.upload(
+            uploaded_file,
+            folder=folder,
             resource_type="image",
+            type="authenticated",
+            use_filename=False,
+            unique_filename=True,
+            overwrite=False,
         )
 
     except Exception as exc:
         raise CloudinaryUploadError(
-            "An error occurred while uploading the image to Cloudinary."
+            "The image could not be uploaded. "
+            "Please try again."
         ) from exc
 
-    return result
+    required_fields = (
+        "asset_id",
+        "public_id",
+        "secure_url",
+        "width",
+        "height",
+        "bytes",
+    )
 
+    incomplete = any(
+        response.get(field) in (None, "") for field in required_fields)
+    
+
+
+    if incomplete:
+        public_id = response.get("public_id")
+
+        if public_id:
+            destroy_image(
+                public_id,
+                delivery_type=response.get(
+                    "type",
+                    "authenticated",
+                ),
+            )
+
+        raise CloudinaryUploadError(
+            "Cloudinary returned an incomplete "
+            "upload response."
+        )
+
+    return {
+        "cloudinary_asset_id": response["asset_id"],
+        "public_id": response["public_id"],
+        "delivery_type": response.get("type", "authenticated"),
+        "secure_url": response["secure_url"],
+        "original_filename": str(response.get("original_filename") or getattr(uploaded_file, "name", "") or "")
+        ["255"],
+        "image_format": (
+            response.get("format")
+            or validated_format
+        ),
+        "width": response["width"],
+        "height": response["height"],
+        "bytes": response["bytes"],
+        "version": response.get("version"),
+    }
+    
 def _configure_cloudinary() -> None:
     """ Load server-side Cloudinary configuration from Django settings. """
 
