@@ -2,6 +2,10 @@
 from __future__ import annotations
 
 from PIL import Image, UnidentifiedImageError
+from urllib.parse import urlparse, unquote
+
+import cloudinary
+from django.conf import settings
 
 
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
@@ -71,3 +75,7 @@ def validate_image(uploaded_file) -> str:
         uploaded_file.seek(0)
 
     return image_format.lower()
+
+
+class CloudinaryUploadError(RuntimeError):
+    """An error occurred while uploading the image to Cloudinary."""
