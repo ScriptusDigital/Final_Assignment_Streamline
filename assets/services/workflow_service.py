@@ -160,6 +160,21 @@ def _assert_action(
 
         return
 
+    if action == "restore":
+        if role != "admin":
+            raise PermissionDenied(
+                "Only an administrator can restore an asset."
+            )
+
+        if asset.status != Asset.Status.ARCHIVED:
+            raise WorkflowError({
+                "status": (
+                    "The asset must be archived to restore it."
+                )
+            })
+
+        return
+
     raise WorkflowError({
         "action": "Unknown workflow action.",
     })
