@@ -1,7 +1,6 @@
 """ Rules for asset access and workflow decisions """
 
 from __future__ import annotations
-from assets.models import Asset
 from django.core.exceptions import ValidationError, PermissionDenied
 from django.db import transaction
 from assets.models import Asset, AssetEvent
@@ -108,27 +107,27 @@ def _assert_action (
         return
 
     if action in (
-        "approve", 
-        "request_changes"
-):
-       if role != "admin":
-           readable_action = action.replace(
-               "_", 
-               " "
+            "approve", 
+            "request_changes"
+    ):
+        if role != "admin":
+            readable_action = action.replace(
+                "_", 
+                " "
+                )
+
+            raise PermissionDenied(
+                    "Only an administrator can "
+                    f"{readable_action} an asset."
             )
 
-           raise PermissionDenied(
-                "Only an administrator can "
-                f"{readable_action} an asset."
-        )
-
-       if asset.status != Asset.Status.IN_REVIEW:
-           raise WorkflowError({
-               "status": (
-                   "The asset must be in review."
-               ),
-           })
-    return
+        if asset.status != Asset.Status.IN_REVIEW:
+            raise WorkflowError({
+                "status": (
+                    "The asset must be in review."
+                ),
+            })
+        return
 
     raise WorkflowError({
         "action": "Unknown workflow action.", 
@@ -172,76 +171,76 @@ def submit(
         to_status=asset.status,
     )
 
-    @transaction.atomic
+@transaction.atomic
 def approve(
     asset: Asset,
     actor,
 ) -> Asset:
-    """Approve an asset currently under review."""
+        """Approve an asset currently under review."""
 
-    _assert_action(
-        actor,
-        asset,
-        "approve",
-    )
-
-    if asset.rights_status not in (
-        Asset.RightsStatus.CLEARED,
-        Asset.RightsStatus.RESTRICTED,
-    ):
-        raise WorkflowError({
-            "rights_status": (
-                "Rights must be cleared or "
-                "restricted before approval."
-            ),
-        })
-
-    if (
-        asset.expiry_date
-        and asset.expiry_date
-        < timezone.localdate()
-    ):
-        raise WorkflowError({
-            "expiry_date": (
-                "An asset with expired rights "
-                "cannot be approved."
-            ),
-        })
-
-    if (
-        asset.permitted_use
-        == Asset.PermittedUse.INTERNAL
-    ):
-        raise WorkflowError({
-            "permitted_use": (
-                "Choose an external permitted "
-                "use before approval."
-            ),
-        })
-
-    previous_status = asset.status
-
-    asset.status = Asset.Status.APPROVED
-    asset.approver = actor
-    asset.approved_at = timezone.now()
-
-    asset.full_clean()
-
-    asset.save(
-        update_fields=(
-            "status",
-            "approver",
-            "approved_at",
-            "updated_at",
+        _assert_action(
+            actor,
+            asset,
+            "approve",
         )
-    )
 
-    AssetEvent.objects.create(
-        asset=asset,
-        actor=actor,
-        action=AssetEvent.Action.APPROVED,
-        from_status=previous_status,
-        to_status=asset.status,
-    )
+        if asset.rights_status not in (
+            Asset.RightsStatus.CLEARED,
+            Asset.RightsStatus.RESTRICTED,
+        ):
+            raise WorkflowError({
+                "rights_status": (
+                    "Rights must be cleared or "
+                    "restricted before approval."
+                ),
+            })
 
-    return asset
+        if (
+            asset.expiry_date
+            and asset.expiry_date
+            < timezone.localdate()
+        ):
+            raise WorkflowError({
+                "expiry_date": (
+                    "An asset with expired rights "
+                    "cannot be approved."
+                ),
+            })
+
+        if (
+            asset.permitted_use
+            == Asset.PermittedUse.INTERNAL
+        ):
+            raise WorkflowError({
+                "permitted_use": (
+                    "Choose an external permitted "
+                    "use before approval."
+                ),
+            })
+
+        previous_status = asset.status
+
+        asset.status = Asset.Status.APPROVED
+        asset.approver = actor
+        asset.approved_at = timezone.now()
+
+        asset.full_clean()
+
+        asset.save(
+            update_fields=(
+                "status",
+                "approver",
+                "approved_at",
+                "updated_at",
+            )
+        )
+
+        AssetEvent.objects.create(
+            asset=asset,
+            actor=actor,
+            action=AssetEvent.Action.APPROVED,
+            from_status=previous_status,
+            to_status=asset.status,
+        )
+
+        return asset

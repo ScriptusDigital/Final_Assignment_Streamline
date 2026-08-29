@@ -3,7 +3,7 @@
 from datetime import timedelta
 
 from django.contrib.auth import get_user_model
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, PermissionDenied
 from django.test import TestCase, override_settings, tag
 from django.utils import timezone
 from django.urls import reverse
@@ -768,7 +768,49 @@ class WorkflowAccessTests(AssetFactoryMixin, TestCase):
             Asset.Status.IN_REVIEW,
         )
 
-            
+    def test_only_admin_can_approve_asset_in_review(
+    self,
+):
+        asset = self.make_asset(
+            self.editor,
+            status=Asset.Status.IN_REVIEW,
+        )
+
+        with self.assertRaises(PermissionDenied):
+            workflow_service.approve(
+                asset,
+                self.editor,
+            )
+
+        workflow_service.approve(
+            asset,
+            self.admin,
+        )
+
+        asset.refresh_from_db()
+
+        self.assertEqual(
+            asset.status,
+            Asset.Status.APPROVED,
+        )
+
+        self.assertEqual(
+            asset.approver,
+            self.admin,
+        )
+
+        self.assertIsNotNone(asset.approved_at)
+
+        self.assertTrue(
+        asset.events.filter(
+            action=AssetEvent.Action.APPROVED,
+            actor=self.admin,
+        ).exists()
+    )
+
+
+
+
 class TaxonomyAPITests(AssetFactoryMixin, APITestCase):
     def setUp(self):
         User = get_user_model()
