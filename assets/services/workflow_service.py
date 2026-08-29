@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 from assets.models import Asset
+from django.core.exceptions import ValidationError
+
+class WorkflowError(ValidationError):
+    """The requested workflow transition is invalid."""
 
 def user_role(user) -> str:
     """ Returns the role of the user as a string. """
