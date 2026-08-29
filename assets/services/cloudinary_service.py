@@ -22,6 +22,10 @@ ALLOWED_PIL_FORMATS = {
 class ImageValidationError(ValueError):
     """The uploaded image is not valid or is in an unsupported format."""
 
+
+class CloudinaryUploadError(RuntimeError):
+    """An error occurred while uploading the image to Cloudinary."""
+
 def validate_image(uploaded_file) -> str:
     """Inspect the actual file bytes and return its image format."""
 
@@ -76,6 +80,30 @@ def validate_image(uploaded_file) -> str:
 
     return image_format.lower()
 
+def _configure_cloudinary() -> None:
+    """ Load server-side Cloudinary configuration from Django settings. """
 
-class CloudinaryUploadError(RuntimeError):
-    """An error occurred while uploading the image to Cloudinary."""
+    storage = (getattr(settings, "CLOUDINARY_STORAGE", {}) or {})
+
+    cloud_name = storage.get("CLOUD_NAME", "")
+    api_key = storage.get("API_KEY", "")
+    api_secret = storage.get("API_SECRET", "")
+
+    if not all((cloud_name, api_key, api_secret)):
+        cloudinary_url = getattr(settings, "CLOUDINARY_URL", "",)
+
+        if cloudinary_url:
+            parsed = urlparse(cloudinary_url)
+
+            if parsed.scheme != "cloudinary":
+                cloud_name = parsed.hostname
+                api_key = unquote(parsed.username or "")
+                api_secret = unquote(parsed.password or "")
+
+        if all((cloud_name, api_key, api_secret)):
+            cloudinary.config(
+                cloud_name=cloud_name,
+                api_key=api_key,
+                api_secret=api_secret,
+                secure=True,
+            )
