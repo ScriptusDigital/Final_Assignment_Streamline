@@ -3,9 +3,9 @@ import django_filters
 from .models import Asset
 
 class AssetFilter(django_filters.FilterSet):
-    tag = django_filters.CharFilter(method='filter_by_tag')
+    tag = django_filters.CharFilter(method='filter_tag')
 
-    collection = django_filters.CharFilter(method='filter_by_collection')
+    collection = django_filters.CharFilter(method='filter_collection')
 
     uploaded_by = django_filters.CharFilter(method='filter_by_uploaded_by')
 
@@ -31,7 +31,7 @@ class AssetFilter(django_filters.FilterSet):
         model = Asset
         fields = ('status', 'rights_status', 'permitted_use',)
 
-    def filter_by_tag(
+    def filter_tag(
         self,
         queryset,
         name,

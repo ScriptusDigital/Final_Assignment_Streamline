@@ -1270,6 +1270,67 @@ class AssetAPITests(AssetFactoryMixin, APITestCase):
             set(),
         )
 
+    def test_tag_and_collection_filters_can_be_combined(
+        self,
+    ):
+        tag = Tag.objects.create(
+            name="Athletics Search"
+        )
+
+        collection = Collection.objects.create(
+            name="Paris Games Search",
+            created_by=self.editor,
+        )
+
+        matching = self.make_asset(
+            self.editor,
+            status=Asset.Status.APPROVED,
+            approver=self.admin,
+            approved_at=timezone.now(),
+        )
+
+        non_matching = self.make_asset(
+            self.editor,
+            status=Asset.Status.APPROVED,
+            approver=self.admin,
+            approved_at=timezone.now(),
+        )
+
+        matching.tags.add(tag)
+        matching.collections.add(collection)
+
+        self.client.force_authenticate(
+            self.viewer
+        )
+
+        response = self.client.get(
+            reverse("asset-list"),
+            {
+                "tag": tag.slug,
+                "collection": collection.pk,
+            },
+        )
+
+        self.assertEqual(
+            response.status_code,
+            200,
+            response.data,
+        )
+
+        ids = {
+            item["id"]
+            for item in self.results(response)
+        }
+
+        self.assertEqual(
+            ids,
+            {str(matching.pk)},
+        )
+        self.assertNotIn(
+            str(non_matching.pk),
+            ids,
+        )
+
 class CloudinaryServiceTests(TestCase):
     def test_validation_checks_bytes_not_extension(self):
         disguised_text = SimpleUploadedFile(
