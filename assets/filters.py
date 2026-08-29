@@ -3,10 +3,8 @@ import django_filters
 from .models import Asset
 
 class AssetFilter(django_filters.FilterSet):
-    class Meta:
-        model = Asset
-        fields = {
-            'name': ['icontains'],
-            'description': ['icontains'],
-            'created_at': ['exact', 'year__gt', 'year__lt'],
-        }
+    tag = django_filters.CharFilter(method='filter_by_tag')
+
+    collection = django_filters.CharFilter(method='filter_by_collection')
+
+    uploaded_by = django_filters.CharFilter(method='filter_by_uploaded_by')
