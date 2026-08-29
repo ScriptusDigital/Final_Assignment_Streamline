@@ -1753,7 +1753,167 @@ class AssetAPITests(AssetFactoryMixin, APITestCase):
             ids,
         )
 
+    def test_editor_and_admin_complete_asset_workflow(
+        self,
+    ):
+        asset = self.make_asset(
+            self.editor,
+            status=Asset.Status.DRAFT,
+        )
 
+        self.client.force_authenticate(
+            self.editor
+        )
+        submitted = self.client.post(
+            reverse("asset-submit", args=[asset.pk]),
+            {},
+            format="json",
+        )
+
+        self.assertEqual(
+            submitted.status_code,
+            200,
+            submitted.data,
+        )
+
+        self.assertEqual(
+            submitted.data["status"],
+            Asset.Status.IN_REVIEW,
+        )
+
+        denied_approval = self.client.post(
+            reverse("asset-approve", args=[asset.pk]),
+            {},
+            format="json",
+        )   
+
+        self.assertEqual(
+            denied_approval.status_code,
+            403,
+        )
+
+        self.client.force_authenticate(
+            self.admin
+        )
+
+        changes_requested = self.client.post(
+            reverse("asset-request-changes", args=[asset.pk],),
+{
+                "reason": (
+                    "Please confirm the image credit."
+                )
+            },
+            format="json",
+        )
+
+
+        self.assertEqual(
+            changes_requested.status_code,
+            200,
+            changes_requested.data,
+        )
+
+        self.assertEqual(
+            changes_requested.data["status"],
+            Asset.Status.CHANGES_REQUESTED,
+        )   
+
+        self.client.force_authenticate(
+            self.editor
+        )
+
+        resubmitted = self.client.post(
+            reverse("asset-submit", args=[asset.pk]),
+            {},
+            format="json",
+        )
+
+        self.assertEqual(
+            resubmitted.status_code,
+            200,
+            resubmitted.data,
+        )
+
+        self.client.force_authenticate(
+            self.admin
+        )
+
+        approved = self.client.post(
+            reverse("asset-approve", args=[asset.pk]),
+            {},
+            format="json",
+        )   
+
+        self.assertEqual(
+            approved.status_code,
+            200,
+            approved.data,
+        )   
+
+
+        self.assertEqual(
+            approved.data["status"],
+            Asset.Status.APPROVED,
+        )
+
+        archived = self.client.post(
+            reverse(
+                "asset-archive",
+                args=[asset.pk],
+            ),
+            {
+                "reason": "Campaign completed.",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            archived.status_code,
+            200,
+            archived.data,
+        )
+
+        self.assertEqual(
+            archived.data["status"],
+            Asset.Status.ARCHIVED,
+        )
+
+        restored = self.client.post(
+            reverse(
+                "asset-restore",
+                args=[asset.pk],
+            ),
+            {},
+            format="json",
+        )   
+
+        self.assertEqual(
+            restored.status_code,
+            200,
+            restored.data,
+        )
+
+        self.assertEqual(
+            restored.data["status"],
+            Asset.Status.DRAFT,
+        )
+
+        asset.refresh_from_db()
+
+        self.assertIsNone(asset.archived_at)
+
+
+        self.assertCountEqual(
+            asset.events.values_list("action", flat=True),
+            [
+                AssetEvent.Action.SUBMITTED,
+                AssetEvent.Action.CHANGES_REQUESTED,
+                AssetEvent.Action.SUBMITTED,
+                AssetEvent.Action.APPROVED,
+                AssetEvent.Action.ARCHIVED,
+                AssetEvent.Action.RESTORED,
+            ],
+        )
 
 
 class CloudinaryServiceTests(TestCase):

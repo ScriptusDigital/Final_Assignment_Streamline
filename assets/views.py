@@ -232,11 +232,53 @@ class AssetViewSet(viewsets.ModelViewSet):
                 self.get_serializer(asset).data
             )
     @action(detail=True, methods=["post"])
+
     def submit(self, request, *args, **kwargs):
 
        return self._work_flow_response(
            workflow_service.submit
          )
+
+    @action(
+        detail=True,
+        methods=("post",),
+    )
+
+    def approve(self, request, *args, **kwargs):
+        return self._work_flow_response(
+            workflow_service.approve
+        )
+
+    @action(
+        detail=True,
+        methods=("post",),
+        url_path="request-changes",
+    )
+    def request_changes(self, request, *args, **kwargs):
+        return self._work_flow_response(
+            workflow_service.request_changes,
+            request.data.get("reason", ""),
+        )
+
+    @action(
+        detail=True,
+        methods=("post",),)
+
+    def archive(self, request, *args, **kwargs):
+
+        return self._workflow_response(
+            workflow_service.archive,
+            request.data.get("reason", ""),
+        )
+
+    @action(
+        detail=True,
+        methods=("post",),)
+
+    def restore(self, request, *args, **kwargs):
+        return self._workflow_response(
+            workflow_service.restore
+        )
 
 class DashboardView(APIView):
     """ API view for the dashboard, providing counts of assets by status. """
