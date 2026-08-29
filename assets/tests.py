@@ -1182,6 +1182,54 @@ class AssetAPITests(AssetFactoryMixin, APITestCase):
             {str(matching.pk)},
         )
 
+
+    def test_free_text_search_and_structured_filters(
+        self,):
+        matching = self.make_asset(
+            self.editor,
+            status=Asset.Status.APPROVED,
+            title="Olympic rowing final",
+            location="Paris",
+            approver=self.admin,
+            approved_at=timezone.now(),
+    )
+        self.make_asset(
+            self.editor,
+            status=Asset.Status.APPROVED,
+            title="Mountain cycling",
+            location="Nice",
+            approver=self.admin,
+            approved_at=timezone.now(),
+        )
+
+        self.client.force_authenticate(
+            self.viewer
+        )
+
+        response = self.client.get(
+            reverse("asset-list"),
+            {
+                "q": "rowing",
+                "rights_status": (Asset.RightsStatus.CLEARED,),
+            },
+        )
+
+        self.assertEqual(
+            response.status_code,
+            200,
+            response.data,
+        )
+
+        ids = {
+            item["id"]
+            for item in self.results(response)
+        }
+
+        self.assertEqual(
+            ids,
+            {str(matching.pk)},
+        )
+
 class CloudinaryServiceTests(TestCase):
     def test_validation_checks_bytes_not_extension(self):
         disguised_text = SimpleUploadedFile(
