@@ -6,7 +6,8 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.test import TestCase, override_settings, tag
 from django.utils import timezone
-from django.urls import reverse 
+from django.urls import reverse
+from urllib3 import request 
 
 from .models import Asset, AssetEvent, Collection, Tag
 from django.db.models import Count
@@ -451,6 +452,7 @@ class AssetSerializerTests(AssetFactoryMixin, TestCase):
         )
 
     @patch("assets.serializers.cloudinary_service.upload_image")
+
     def test_create_uploads_image_and_records_event(
     self,
     mocked_upload,
@@ -498,6 +500,42 @@ class AssetSerializerTests(AssetFactoryMixin, TestCase):
         self.assertEqual(event.metadata["original_filename"], "photo-500")
 
 
+    def test_database_failure_after_upload_triggers_cleanup(
+    self,
+):
+        request = APIRequestFactory().post("/api/assets/")
+        request.user = self.editor
+
+
+        serializer = AssetSerializer(
+        data={
+            "file": image_upload(),
+            "title": "Cleanup test",
+        },
+        context={"request": request},
+    )
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+
+        with patch(
+            "assets.serializers.cloudinary_service.upload_image",
+            return_value=cloudinary_response(600),
+        ), patch(
+            "assets.serializers.cloudinary_service.destroy_image"
+        ) as mocked_destroy, patch(
+            "assets.models.Asset.save",
+            side_effect=RuntimeError(
+                "database unavailable"
+            ),
+        ), self.assertRaisesRegex(
+            RuntimeError,
+            "database unavailable",
+        ):
+            serializer.save()
+
+        mocked_destroy.assert_called_once_with(
+            "streamline/assets/public-600",
+            delivery_type="authenticated",
+        )
 
 class WorkflowAccessTests(AssetFactoryMixin, TestCase):
     def setUp(self):
