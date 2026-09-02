@@ -44,19 +44,77 @@ export class ApiError extends Error {
   }
 }
 
-export async function apiRequest(path, options = {}) {
-    const method = options.method?.toUpperCase() ?? 'GET'
+export async function apiRequest(
+  path,
+  options = {},
+) {
+  const method = (
+    options.method ?? 'GET'
+  ).toUpperCase()
 
-    const headers = new Headers(options.headers ?? {})
-    let body = options.body
+  const headers = new Headers(options.headers)
+  let body = options.body
 
+  headers.set('Accept', 'application/json')
 
-    headers.set('Accept', 'application/json')
+  const isFormData = body instanceof FormData
 
-    const isFormData = body instanceof FormData
+  if (
+    body !== undefined &&
+    body !== null &&
+    !isFormData &&
+    typeof body !== 'string'
+  ) {
+    headers.set(
+      'Content-Type',
+      'application/json',
+    )
 
-    if(
-        body !== undefined &&
-        body !== null &&
-        !isFormData &&
-       typeof body !== 'string')
+    body = JSON.stringify(body)
+  }
+
+  if (!SAFE_METHODS.has(method)) {
+    const csrfToken = readCookie('csrftoken')
+
+    if (csrfToken) {
+      headers.set('X-CSRFToken', csrfToken)
+    }
+  }
+
+  const response = await fetch(
+    `${API_BASE}${path}`,
+    {
+      ...options,
+      method,
+      headers,
+      body,
+      credentials: 'include',
+    },
+  )
+
+  const contentType =
+    response.headers.get('content-type') ?? ''
+
+  const responseText = (
+    response.status === 204
+      ? ''
+      : await response.text()
+  )
+
+  const data = (
+    responseText &&
+    contentType.includes('application/json')
+      ? JSON.parse(responseText)
+      : responseText || null
+  )
+
+  if (!response.ok) {
+    throw new ApiError(
+      getErrorMessage(data, response.status),
+      response.status,
+      data,
+    )
+  }
+
+  return data
+}
