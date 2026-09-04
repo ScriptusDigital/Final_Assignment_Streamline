@@ -9,8 +9,7 @@ import {
     Outlet, useLocation,
 } from 'react-router'
 
-import { useAuth } from '../contexts/useAuth'
-
+import { useAuth } from '../../contexts/useAuth'
 
 /**
  * ProtectedRoute component implementation.
