@@ -34,12 +34,13 @@ function getLoginErrorMessage(error) {
 }
 
 /* LoginPage elemenst */
-
 export function LoginPage() {
     const {
-        login, isAuthenticated,
+        login,
+        isAuthenticated,
     } = useAuth()
 
+    /** React Router hooks for navigation and location */
     const location = useLocation()
     const navigate = useNavigate()
 
@@ -49,116 +50,112 @@ export function LoginPage() {
     const [submitting, setSubmitting] =
         useState(false)
 
+    const previousLocation =
+        location.state?.from
 
-    const previousLocation = 
-    location.state?.formError
+    const destination =
+        previousLocation?.pathname ??
+        '/dashboard'
 
-
-  const destination =
-    previousLocation?.pathname ??
-    '/dashboard'
-
-  if (isAuthenticated) {
-    return (
-      <Navigate
-        to="/dashboard"
-        replace
-      />
-    )
-  }
-
-  async function handleSubmit(event) {
-    event.preventDefault()
-    setFormError('')
-    setSubmitting(true)
-
-    try {
-      await login({
-        email,
-        password,
-      })
-
-      navigate(destination, {
-        replace: true,
-      })
-    } catch (error) {
-      setFormError(
-        getLoginErrorMessage(error),
-      )
-    } finally {
-      setSubmitting(false)
+    if (isAuthenticated) {
+        return (
+            <Navigate
+                to="/dashboard"
+                replace
+            />
+        )
     }
-  }
+    /** Form submission handler */
+    async function handleSubmit(event) {
+        event.preventDefault()
+        setFormError('')
+        setSubmitting(true)
 
-   return (
-    <main>
-      <section aria-labelledby="login-heading">
-        <p>Streamline</p>
+        try {
+            await login({
+                email,
+                password,
+            })
 
-        <h1 id="login-heading">
-          Log in
-        </h1>
+            navigate(destination, {
+                replace: true,
+            })
+        } catch (error) {
+            setFormError(
+                getLoginErrorMessage(error),
+            )
+        } finally {
+            setSubmitting(false)
+        }
+    }
+  /
+    return (
+        <main>
+            <section aria-labelledby="login-heading">
+                <p>Streamline</p>
 
-        <form onSubmit={handleSubmit}>
-          <div>
-            <label htmlFor="email">
-              Email address
-            </label>
+                <h1 id="login-heading">
+                    Log in
+                </h1>
 
-            <input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(event) => {
-                setEmail(event.target.value)
-              }}
-            />
-          </div>
+                <form onSubmit={handleSubmit}>
+                    <div>
+                        <label htmlFor="email">
+                            Email address
+                        </label>
 
-          <div>
-            <label htmlFor="password">
-              Password
-            </label>
+                        <input id="email"
+                            name="email"
+                            type="email"
+                            autoComplete="email"
+                            required
+                            value={email}
+                            onChange={(event) => {
+                                setEmail(event.target.value)
+                            }}
+                        />
+                    </div>
 
-            <input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              required
-              value={password}
-              onChange={(event) => {
-                setPassword(event.target.value)
-              }}
-            />
-          </div>
+                    <div>
+                        <label htmlFor="password">
+                            Password
+                        </label>
 
-          {formError && (
-            <p role="alert">
-              {formError}
-            </p>
-          )}
+                        <input
+                            id="password"
+                            name="password"
+                            type="password"
+                            autoComplete="current-password"
+                            required
+                            value={password}
+                            onChange={(event) => {
+                                setPassword(event.target.value)
+                            }}
+                        /></div>
 
-          <button
-            type="submit"
-            disabled={submitting}
-          >
-            {submitting
-              ? 'Logging in…'
-              : 'Log in'}
-          </button>
-        </form>
+                    {formError && (
+                        <p role="alert">
+                            {formError}
+                        </p>
+                    )}
 
-        <p>
-          No account yet?{' '}
-          <Link to="/register">
-            Create one
-          </Link>
-        </p>
-      </section>
-    </main>
-  )
+                    <button
+                        type="submit"
+                        disabled={submitting}
+                    >
+                        {submitting
+                            ? 'Logging in…'
+                            : 'Log in'}
+                    </button>
+                </form>
+
+                <p>
+                    No account yet?{' '}
+                    <Link to="/register">
+                        Create one
+                    </Link>
+                </p>
+            </section>
+        </main>
+    )
 }
