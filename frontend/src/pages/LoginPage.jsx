@@ -88,7 +88,6 @@ export function LoginPage() {
             setSubmitting(false)
         }
     }
-  /
     return (
         <main>
             <section aria-labelledby="login-heading">
