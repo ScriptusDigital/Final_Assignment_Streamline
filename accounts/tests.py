@@ -1,5 +1,7 @@
 from django.contrib.auth import SESSION_KEY, get_user_model
 from django.test import TestCase
+
+from accounts.models import User
 from .serializers import LoginSerializer, RegistrationSerializer
 
 from django.urls import reverse
@@ -13,12 +15,12 @@ class UserManagerTests(TestCase):
     def test_create_user(self):
         User = get_user_model()
         user = User.objects.create_user(
-            email='viewer@example.com',
-            password='Strong-Password_123'
-        )
+    email="Viewer@Example.COM",
+    password="testpassword",
+)
         self.assertEqual(user.email, 'viewer@example.com')
         self.assertEqual(user.role, User.Role.VIEWER)
-        self.assertTrue(user.check_password('Strong-Password_123'))
+        self.assertTrue(user.check_password('testpassword'))
         self.assertFalse(user.is_staff)
         self.assertFalse(user.is_superuser)
 
