@@ -1,28 +1,32 @@
 import { useState } from 'react'
 import {
-    Link,
-    Navigate,
-    useLocation,
-    useNavigate,
+  Link,
+  Navigate,
+  useNavigate,
 } from 'react-router'
 
 import { ApiError } from '../api/client'
 import { useAuth } from '../contexts/useAuth'
-import '../styles/auth.css' 
+import '../styles/auth.css'
+function getRegistrationErrorMessage(error) {
+  if (
+    error instanceof ApiError &&
+    error.data &&
+    typeof error.data === 'object'
+  ) {
+    const firstMessage = Object
+      .values(error.data)
+      .flat()
+      .find((message) => (
+        typeof message === 'string'
+      ))
 
-    function getRegistrationErrorMessage(error) {   
-        if (error instanceof ApiError) {
-            const backendMessages =
-                error.data?.non_field_errors
+    if (firstMessage) {
+      return firstMessage
+    }
 
-            if (
-                Array.isArray(backendMessages) &&
-                backendMessages.length > 0
-            ) {
-                return backendMessages[0]
-            }
+    return error.message
+  }
 
-            return error.message
-        }
-        return 'Unable to register. Please try again'
-    }           
+  return 'Unable to create your account. Please try again.'
+}
