@@ -90,3 +90,75 @@ export function LoginPage() {
     }
   }
 
+   return (
+    <main>
+      <section aria-labelledby="login-heading">
+        <p>Streamline</p>
+
+        <h1 id="login-heading">
+          Log in
+        </h1>
+
+        <form onSubmit={handleSubmit}>
+          <div>
+            <label htmlFor="email">
+              Email address
+            </label>
+
+            <input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(event) => {
+                setEmail(event.target.value)
+              }}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="password">
+              Password
+            </label>
+
+            <input
+              id="password"
+              name="password"
+              type="password"
+              autoComplete="current-password"
+              required
+              value={password}
+              onChange={(event) => {
+                setPassword(event.target.value)
+              }}
+            />
+          </div>
+
+          {formError && (
+            <p role="alert">
+              {formError}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={submitting}
+          >
+            {submitting
+              ? 'Logging in…'
+              : 'Log in'}
+          </button>
+        </form>
+
+        <p>
+          No account yet?{' '}
+          <Link to="/register">
+            Create one
+          </Link>
+        </p>
+      </section>
+    </main>
+  )
+}
