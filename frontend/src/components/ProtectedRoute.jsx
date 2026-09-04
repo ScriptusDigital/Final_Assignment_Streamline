@@ -11,6 +11,11 @@ import {
 
 import { useAuth } from '../contexts/useAuth'
 
+
+/**
+ * ProtectedRoute component implementation.
+ */
+
 export function ProtectedRoute() {
     const {loading, isAuthenticated} = useAuth()
 
