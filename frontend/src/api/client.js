@@ -1,3 +1,8 @@
+
+/**
+ * Client API functions, including request handling and error management.
+ */
+
 const API_BASE = import.meta.env.VITE_API_BASE ?? '/api'
 
 const SAFE_METHODS = new Set([

@@ -14,3 +14,18 @@ export function loginUser(credentials) {
     body: credentials,
   })
 }
+
+
+export function registerUser(details) {
+  return apiRequest('/auth/register/', {
+    method: 'POST',
+    body: details,
+  })
+}
+
+
+export function logoutUser() {
+  return apiRequest('/auth/logout/', {
+    method: 'POST',
+  })
+}
