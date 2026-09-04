@@ -4,10 +4,11 @@
 
 import { useState } from 'react'
 import {
-    Link, Navigate, useLocation, useNavigate,
-}
-    from 'react-router';
-
+    Link,
+    Navigate,
+    useLocation,
+    useNavigate,
+} from 'react-router';
 
 import { ApiError } from '../api/client'
 import { useAuth } from '../contexts/useAuth'
@@ -113,11 +114,11 @@ export function LoginPage() {
                     your photography.
                 </p>
 
-  <form
-  className="auth-form"
-  onSubmit={handleSubmit}
->
-            <div className="form-field">
+                <form
+                    className="auth-form"
+                    onSubmit={handleSubmit}
+                >
+                    <div className="form-field">
                         <label htmlFor="email">
                             Email address
                         </label>
@@ -134,7 +135,7 @@ export function LoginPage() {
                         />
                     </div>
 
-                   <div className="form-field">
+                    <div className="form-field">
                         <label htmlFor="password">
                             Password
                         </label>
@@ -157,15 +158,15 @@ export function LoginPage() {
                         </p>
                     )}
 
-                   <button
-  className="auth-submit"
-  type="submit"
-  disabled={submitting}
->
-  {submitting
-    ? 'Logging in…'
-    : 'Log in'}
-</button>
+                    <button
+                        className="auth-submit"
+                        type="submit"
+                        disabled={submitting}
+                    >
+                        {submitting
+                            ? 'Logging in…'
+                            : 'Log in'}
+                    </button>
                 </form>
 
                 <p className="auth-switch">

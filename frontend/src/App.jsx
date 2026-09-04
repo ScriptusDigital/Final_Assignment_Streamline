@@ -7,6 +7,7 @@ import { AppShell } from './components/layout/AppShell'
 import { ProtectedRoute } from './components/routing/ProtectedRoute'
 import { RoleRoute } from './components/routing/RoleRoute'
 import { LoginPage } from './pages/LoginPage'
+import { RegisterPage } from './pages/RegisterPage'
 
 function PlaceholderPage ({ title, description }) {
   return (
@@ -38,15 +39,9 @@ export default function App() {
 />
 
 <Route
-        path="/register"
-        element={
-          <PlaceholderPage
-            title="Create an account"
-            description="Register as a Streamline viewer."
-          />
-        }
-      />
-
+  path="/register"
+  element={<RegisterPage />}
+/>
     <Route element={<ProtectedRoute />}>
 <Route element={<AppShell />}>
         <Route
