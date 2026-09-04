@@ -1,7 +1,27 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 64 64"
+>
   <title>Streamline</title>
 
-  <rect width="64" height="64" rx="14" fill="#173f35"></rect>
+  <rect
+    width="64"
+    height="64"
+    rx="14"
+    fill="#0b5d3b"
+  />
 
-  <path d="M16 18h25c5 0 8 3 8 7s-3 7-8 7H23c-5 0-8 3-8 7s3 7 8 7h25" fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"></path>
+  <path
+    d="M16 48 C25 55 41 53 46 46 C51 39 45 33 33 31 C21 29 14 25 16 18 C19 9 36 8 45 14"
+    fill="none"
+    stroke="#ffffff"
+    stroke-width="7"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <path
+    d="M57 14 L44 6.5 L44 21.5 Z"
+    fill="#ffffff"
+  />
 </svg>
