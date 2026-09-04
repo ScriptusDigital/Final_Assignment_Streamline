@@ -5,15 +5,30 @@ import {
 import { useAuth } from "../../context/useAuth"
 
 export function RoleRoute({ allowedRoles }) {
-    const { user } = useAuth();
+    const {user, loading, isAuthenticated,} = useAuth()
 
-    if (!user) {
-        return <Navigate to="/login" />;
+    if (loading) {
+        return (
+            <p role="status">Loading...</p>
+        )
     }
 
-    if (!allowedRoles.includes(user.role)) {
-        return <Navigate to="/unauthorized" />;
-    }
+  if (!isAuthenticated) {
+    return (
+      <Navigate
+        to="/login"
+        replace
+      />
+    )
+  }
 
-    return <Outlet />;
+  if (!allowedRoles.includes(user?.role)) {
+    return (
+      <Navigate
+        to="/dashboard" replace />
+
+    )
+}
+
+return <Outlet />
 }
