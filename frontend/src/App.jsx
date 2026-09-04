@@ -6,6 +6,7 @@ import {
 
 import { ProtectedRoute } from './components/routing/ProtectedRoute'
 import { RoleRoute } from './components/routing/RoleRoute'
+import { LoginPage } from './pages/LoginPage'
 
 function PlaceholderPage ({ title, description }) {
   return (
@@ -31,15 +32,10 @@ export default function App() {
         }
       />
     
-    <Route
-      path="/login"
-      element={
-        <PlaceholderPage
-          title="Login"
-          description="Access your account to manage your digital assets."
-        />
-      }
-    />
+<Route
+  path="/login"
+  element={<LoginPage />}
+/>
 <Route
         path="/register"
         element={
