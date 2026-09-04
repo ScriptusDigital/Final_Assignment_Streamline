@@ -1,3 +1,8 @@
+
+/**
+ * Authentication API functions
+ */
+
 import { apiRequest } from './client';
 
 export function initialiseCsrf() {
@@ -14,7 +19,6 @@ export function loginUser(credentials) {
     body: credentials,
   })
 }
-
 
 export function registerUser(details) {
   return apiRequest('/auth/register/', {
