@@ -36,6 +36,7 @@ export default function App() {
   path="/login"
   element={<LoginPage />}
 />
+
 <Route
         path="/register"
         element={

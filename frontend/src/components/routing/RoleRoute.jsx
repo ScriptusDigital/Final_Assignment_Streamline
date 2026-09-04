@@ -4,8 +4,8 @@
  */
 
 import {
-  Navigate,
-  Outlet,
+    Navigate,
+    Outlet,
 } from 'react-router'
 
 
@@ -17,10 +17,10 @@ import { useAuth } from '../../contexts/useAuth'
 
 /**
  * RoleRoute component implementation.
- */ 
+ */
 
 export function RoleRoute({ allowedRoles }) {
-    const {user, loading, isAuthenticated,} = useAuth()
+    const { user, loading, isAuthenticated, } = useAuth()
 
     if (loading) {
         return (
@@ -28,22 +28,22 @@ export function RoleRoute({ allowedRoles }) {
         )
     }
 
-  if (!isAuthenticated) {
-    return (
-      <Navigate
-        to="/login"
-        replace
-      />
-    )
-  }
+    if (!isAuthenticated) {
+        return (
+            <Navigate
+                to="/login"
+                replace
+            />
+        )
+    }
 
-  if (!allowedRoles.includes(user?.role)) {
-    return (
-      <Navigate
-        to="/dashboard" replace />
+    if (!allowedRoles.includes(user?.role)) {
+        return (
+            <Navigate
+                to="/dashboard" replace />
 
-    )
-}
+        )
+    }
 
-return <Outlet />
+    return <Outlet />
 }

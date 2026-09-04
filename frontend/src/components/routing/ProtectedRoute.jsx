@@ -5,8 +5,8 @@
 
 
 import {
-    Navigate,
-    Outlet, useLocation,
+  Navigate,
+  Outlet, useLocation,
 } from 'react-router'
 
 import { useAuth } from '../../contexts/useAuth'
@@ -16,19 +16,19 @@ import { useAuth } from '../../contexts/useAuth'
  */
 
 export function ProtectedRoute() {
-    const {loading, isAuthenticated} = useAuth()
+  const { loading, isAuthenticated } = useAuth()
 
-    const location = useLocation()
+  const location = useLocation()
 
-    if (loading) {
-      return (
-        <p role="status">Loading Streamline...</p>
-      )
-    }
-    
-    if (!isAuthenticated) {
-        return <Navigate to="/login" replace state  ={{ from: location }} />
-    }
+  if (loading) {
+    return (
+      <p role="status">Loading Streamline...</p>
+    )
+  }
 
-    return <Outlet />
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace state={{ from: location }} />
+  }
+
+  return <Outlet />
 }
