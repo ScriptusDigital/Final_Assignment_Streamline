@@ -9,7 +9,7 @@ import {
     Outlet, useLocation,
 } from 'react-router'
 
-import { useAuth } from '../contexts/useAuth.js'
+import { useAuth } from '../contexts/useAuth'
 
 export function ProtectedRoute() {
     const {loading, isAuthenticated} = useAuth()
