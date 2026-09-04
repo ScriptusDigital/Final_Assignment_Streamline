@@ -11,7 +11,7 @@ import {
 
 import { ApiError } from '../api/client'
 import { useAuth } from '../contexts/useAuth'
-
+import '../styles/auth.css'
 
 /**
  * Login error message.
@@ -89,16 +89,35 @@ export function LoginPage() {
         }
     }
     return (
-        <main>
-            <section aria-labelledby="login-heading">
-                <p>Streamline</p>
+        <main className="auth-page">
+            <section
+                className="auth-card"
+                aria-labelledby="login-heading"
+            >
+                <Link
+                    to="/"
+                    className="auth-brand"
+                >
+                    Streamline
+                </Link>
 
+                <p className="auth-kicker">
+                    Secure digital asset management
+                </p>
                 <h1 id="login-heading">
-                    Log in
+                    Welcome back
                 </h1>
 
-                <form onSubmit={handleSubmit}>
-                    <div>
+                <p className="auth-intro">
+                    Log in to manage, review and find
+                    your photography.
+                </p>
+
+  <form
+  className="auth-form"
+  onSubmit={handleSubmit}
+>
+            <div className="form-field">
                         <label htmlFor="email">
                             Email address
                         </label>
@@ -115,7 +134,7 @@ export function LoginPage() {
                         />
                     </div>
 
-                    <div>
+                   <div className="form-field">
                         <label htmlFor="password">
                             Password
                         </label>
@@ -139,16 +158,13 @@ export function LoginPage() {
                     )}
 
                     <button
-                        type="submit"
-                        disabled={submitting}
-                    >
-                        {submitting
-                            ? 'Logging in…'
-                            : 'Log in'}
+  className="auth-submit"
+  type="submit"
+  disabled={submitting}>
                     </button>
                 </form>
 
-                <p>
+                <p className="auth-switch">
                     No account yet?{' '}
                     <Link to="/register">
                         Create one

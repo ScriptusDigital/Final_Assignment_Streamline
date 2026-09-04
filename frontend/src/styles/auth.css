@@ -1,0 +1,136 @@
+.auth-page {
+  min-height: 100vh;
+  padding: 2rem;
+
+  display: grid;
+  place-items: center;
+
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(212, 173, 63, 0.28),
+      transparent 32rem
+    ),
+    linear-gradient(
+      135deg,
+      #eef4f5,
+      #dce8eb
+    );
+}
+
+.auth-card {
+  width: min(100%, 430px);
+  padding: clamp(1.5rem, 5vw, 2.5rem);
+
+  background: var(--colour-surface);
+  border: 1px solid var(--colour-border);
+  border-radius: 1rem;
+  box-shadow: var(--shadow-card);
+}
+
+.auth-brand {
+  display: inline-block;
+  margin-bottom: 2rem;
+
+  color: var(--colour-brand);
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  text-decoration: none;
+}
+
+.auth-kicker {
+  margin: 0 0 0.5rem;
+
+  color: var(--colour-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.auth-card h1 {
+  margin: 0;
+
+  color: var(--colour-brand-dark);
+  font-size: 2.25rem;
+  line-height: 1.15;
+}
+
+.auth-intro {
+  margin: 0.75rem 0 1.75rem;
+  color: var(--colour-muted);
+  line-height: 1.55;
+}
+
+.auth-form {
+  display: grid;
+  gap: 1.15rem;
+}
+
+.form-field {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.form-field label {
+  color: var(--colour-brand-dark);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.form-field input {
+  width: 100%;
+  padding: 0.75rem 0.85rem;
+
+  color: #1d2933;
+  background: #ffffff;
+  border: 1px solid #aebbc3;
+  border-radius: 0.5rem;
+}
+
+.form-field input:focus {
+  border-color: var(--colour-brand);
+  box-shadow:
+    0 0 0 3px rgba(23, 78, 91, 0.14);
+}
+
+.auth-form [role="alert"] {
+  margin: 0;
+}
+
+.auth-submit {
+  margin-top: 0.25rem;
+  padding: 0.8rem 1rem;
+
+  color: #ffffff;
+  background: var(--colour-brand);
+  border: 0;
+  border-radius: 0.5rem;
+  font-weight: 750;
+}
+
+.auth-submit:hover:not(:disabled) {
+  background: var(--colour-brand-dark);
+}
+
+.auth-switch {
+  margin: 1.5rem 0 0;
+  color: var(--colour-muted);
+  text-align: center;
+}
+
+.auth-switch a {
+  color: var(--colour-brand);
+  font-weight: 700;
+}
+
+@media (max-width: 520px) {
+  .auth-page {
+    padding: 1rem;
+  }
+
+  .auth-card {
+    padding: 1.5rem;
+  }
+}
