@@ -1,0 +1,262 @@
+:root {
+  font-family:
+    Inter, ui-sans-serif, system-ui,
+    -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+
+  color: #1d2933;
+  background: #f3f6f8;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+
+  --colour-brand: #174e5b;
+  --colour-brand-dark: #103943;
+  --colour-accent: #d4ad3f;
+  --colour-surface: #ffffff;
+  --colour-background: #f3f6f8;
+  --colour-border: #d8e0e5;
+  --colour-muted: #62727d;
+  --colour-sidebar: #12333d;
+  --colour-sidebar-text: #dce8eb;
+
+  --shadow-card:
+    0 8px 24px rgba(23, 42, 51, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: var(--colour-background);
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+a {
+  color: inherit;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+:focus-visible {
+  outline: 3px solid var(--colour-accent);
+  outline-offset: 3px;
+}
+
+.app-shell {
+  min-height: 100vh;
+}
+
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+
+  min-height: 72px;
+  padding: 0 2rem;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+
+  background: var(--colour-surface);
+  border-bottom: 1px solid var(--colour-border);
+}
+
+.app-brand {
+  color: var(--colour-brand);
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  text-decoration: none;
+}
+
+.account-summary {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.account-summary > div {
+  display: grid;
+  gap: 0.15rem;
+  text-align: right;
+}
+
+.account-summary strong {
+  font-size: 0.95rem;
+}
+
+.account-summary span {
+  color: var(--colour-muted);
+  font-size: 0.8rem;
+}
+
+.account-summary button {
+  padding: 0.6rem 0.9rem;
+
+  color: var(--colour-brand);
+  background: transparent;
+  border: 1px solid var(--colour-brand);
+  border-radius: 0.5rem;
+  font-weight: 700;
+}
+
+.account-summary button:hover {
+  color: #ffffff;
+  background: var(--colour-brand);
+}
+
+.app-body {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  min-height: calc(100vh - 73px);
+}
+
+.app-sidebar {
+  padding: 1.5rem 1rem;
+  background: var(--colour-sidebar);
+}
+
+.app-sidebar nav {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.nav-link {
+  padding: 0.75rem 1rem;
+
+  color: var(--colour-sidebar-text);
+  border-radius: 0.5rem;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.nav-link:hover {
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.nav-link-active {
+  color: #20291f;
+  background: var(--colour-accent);
+}
+
+.nav-link-active:hover {
+  background: var(--colour-accent);
+}
+
+.app-content {
+  min-width: 0;
+  padding: 2.25rem;
+}
+
+.app-content > section {
+  max-width: 1100px;
+  padding: 2rem;
+
+  background: var(--colour-surface);
+  border: 1px solid var(--colour-border);
+  border-radius: 0.9rem;
+  box-shadow: var(--shadow-card);
+}
+
+.app-content h1 {
+  margin: 0.3rem 0 0.75rem;
+  color: var(--colour-brand-dark);
+  font-size: clamp(1.8rem, 4vw, 2.5rem);
+  line-height: 1.15;
+}
+
+.app-content section > p:first-child {
+  margin: 0;
+
+  color: var(--colour-muted);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.app-content p {
+  line-height: 1.6;
+}
+
+[role="alert"] {
+  padding: 0.75rem 1rem;
+
+  color: #8a1c1c;
+  background: #fff0f0;
+  border: 1px solid #e6b7b7;
+  border-radius: 0.5rem;
+}
+
+@media (max-width: 760px) {
+  .app-header {
+    position: static;
+    padding: 1rem;
+
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .account-summary {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .account-summary > div {
+    text-align: left;
+  }
+
+  .app-body {
+    grid-template-columns: 1fr;
+  }
+
+  .app-sidebar {
+    padding: 0.75rem;
+    overflow-x: auto;
+  }
+
+  .app-sidebar nav {
+    display: flex;
+    min-width: max-content;
+  }
+
+  .nav-link {
+    white-space: nowrap;
+  }
+
+  .app-content {
+    padding: 1rem;
+  }
+
+  .app-content > section {
+    padding: 1.25rem;
+  }
+}

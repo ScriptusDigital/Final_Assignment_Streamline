@@ -132,3 +132,10 @@ CLOUDINARY_STORAGE = {
 }
 
 CLOUDINARY_UPLOAD_FOLDER = os.getenv('CLOUDINARY_FOLDER', "streamline/assets",).strip()
+
+
+# Trusted local origins for the React development server.
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
