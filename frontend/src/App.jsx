@@ -3,18 +3,18 @@ import {
   Route,
   Routes,
 } from 'react-router'
-
+import { AppShell } from './components/layout/AppShell'
 import { ProtectedRoute } from './components/routing/ProtectedRoute'
 import { RoleRoute } from './components/routing/RoleRoute'
 import { LoginPage } from './pages/LoginPage'
 
 function PlaceholderPage ({ title, description }) {
   return (
-    <main>
+<section>
       <p>Streamline</p>
       <h1>{title}</h1>
       <p>{description}</p>  
-    </main>
+</section>
   )
 }
 
@@ -47,7 +47,8 @@ export default function App() {
         }
       />
 
-      <Route element={<ProtectedRoute />}>
+    <Route element={<ProtectedRoute />}>
+<Route element={<AppShell />}>
         <Route
           path="/dashboard"
           element={
@@ -134,6 +135,7 @@ export default function App() {
           />
         </Route>
       </Route>
+</Route>
 
       <Route
         path="/home"
