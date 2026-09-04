@@ -157,11 +157,15 @@ export function LoginPage() {
                         </p>
                     )}
 
-                    <button
+                   <button
   className="auth-submit"
   type="submit"
-  disabled={submitting}>
-                    </button>
+  disabled={submitting}
+>
+  {submitting
+    ? 'Logging in…'
+    : 'Log in'}
+</button>
                 </form>
 
                 <p className="auth-switch">
